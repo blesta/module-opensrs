@@ -1,8 +1,8 @@
 
     <?php
-    if ((isset($fields) ? $fields : null) && !empty($fields)) {
+    if (($fields ?? null) && !empty($fields)) {
     ?>
-        <div id="<?php echo $this->Html->safe($this->Html->concat('_', (isset($module->class) ? $module->class : null), (isset($module->id) ? $module->id : null)));?>">
+        <div id="<?php echo $this->Html->safe($this->Html->concat('_', ($module->class ?? null), ($module->id ?? null)));?>">
             <?php
             $i = 0;
             foreach ($fields as $field) {

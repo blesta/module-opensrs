@@ -52,7 +52,8 @@ class OpensrsDomains
      *      - tld_data Returns additional information that is required by some registries, such as the residency
      *          of the registrant.
      *      - waiting history Returns information on asynchronous requests.
-     *      - whois_privacy_state Returns the state for the WHOIS Privacy feature: enabled, disabled, enabling, or disabling.
+     *      - whois_privacy_state Returns the state for the WHOIS
+     *          Privacy feature: enabled, disabled, enabling, or disabling.
      *         Note: If the TLD does not allow WHOIS Privacy, always returns Disabled.
      *      - whois_publicity_state Returns the state for the WHOIS Publicity feature: enabled, disabled.
      *         Note: If the TLD does not allow WHOIS Privacy, always returns Disabled.
