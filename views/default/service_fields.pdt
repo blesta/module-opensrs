@@ -1,5 +1,5 @@
     <?php
-    if ((isset($fields) ? $fields : null) && !empty($fields)) {
+    if (($fields ?? null) && !empty($fields)) {
     ?>
         <ul class="no_border">
             <?php

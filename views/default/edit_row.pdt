@@ -14,18 +14,18 @@
                     <li>
                         <?php
                         $this->Form->label($this->_('Opensrs.row_meta.user', true), 'user');
-                        $this->Form->fieldText('user', (isset($vars->user) ? $vars->user : null), ['id' => 'user']);
+                        $this->Form->fieldText('user', ($vars->user ?? null), ['id' => 'user']);
                         ?>
                     </li>
                     <li>
                         <?php
                         $this->Form->label($this->_('Opensrs.row_meta.key', true), 'key');
-                        $this->Form->fieldText('key', (isset($vars->key) ? $vars->key : null), ['id' => 'key']);
+                        $this->Form->fieldText('key', ($vars->key ?? null), ['id' => 'key']);
                         ?>
                     </li>
                     <li>
                         <?php
-                        $this->Form->fieldCheckbox('sandbox', 'true', (isset($vars->sandbox) ? $vars->sandbox : null) == 'true', ['id' => 'sandbox']);
+                        $this->Form->fieldCheckbox('sandbox', 'true', ($vars->sandbox ?? null) == 'true', ['id' => 'sandbox']);
                         $this->Form->label($this->_('Opensrs.row_meta.sandbox', true), 'sandbox', ['class' => 'inline']);
                         ?>
                     </li>

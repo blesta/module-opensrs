@@ -70,7 +70,10 @@ class Opensrs extends RegistrarModule
             'tld_data[registrant_extra_info][registrant_type]' => [
                 'format' => [
                     'if_set' => true,
-                    'rule' => ['in_array', array_keys($fr_fields['tld_data[registrant_extra_info][registrant_type]']['options'])],
+                    'rule' => [
+                        'in_array',
+                        array_keys($fr_fields['tld_data[registrant_extra_info][registrant_type]']['options'])
+                    ],
                     'message' => Language::_('Opensrs.!error.registrant_type.format', true)
                 ]
             ],
@@ -148,9 +151,6 @@ class Opensrs extends RegistrarModule
         $parent_service = null,
         $status = 'pending'
     ) {
-        $row = $this->getModuleRow($package->module_row);
-        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
-
         $tld = null;
         $input_fields = [];
 
@@ -220,7 +220,7 @@ class Opensrs extends RegistrarModule
                     $vars[$key] = $client->country;
                 } elseif (str_contains($key, 'phone')) {
                     $vars[$key] = trim($this->formatPhone(
-                        isset($contact_numbers[0]) ? $contact_numbers[0]->number : null,
+                        isset($contact_numbers[0]) ? $contact_numbers[0]->number : '11111111111',
                         $client->country
                     ));
                 } elseif (str_contains($key, 'email')) {
@@ -686,7 +686,7 @@ class Opensrs extends RegistrarModule
         $fields->setField($tld_options);
 
         // Set nameservers
-        for ($i=1; $i<=5; $i++) {
+        for ($i = 1; $i <= 5; $i++) {
             $type = $fields->label(Language::_('Opensrs.package_fields.ns' . $i, true), 'opensrs_ns' . $i);
             $type->attach(
                 $fields->fieldText(
@@ -735,7 +735,7 @@ class Opensrs extends RegistrarModule
                 array_merge(
                     Configure::get('Opensrs.domain_fields'),
                     Configure::get('Opensrs.nameserver_fields'),
-                    isset($tld) ? Configure::get('Opensrs.domain_fields' . $tld) : []
+                    isset($tld) ? (array)Configure::get('Opensrs.domain_fields' . $tld) : []
                 ),
                 null,
                 $vars
@@ -1304,7 +1304,9 @@ class Opensrs extends RegistrarModule
             $vars = (object)$post;
         } else {
             $vars->registrar_lock = $this->getDomainIsLocked($fields->domain, $package->module_row) ? 'true' : 'false';
-            $vars->whois_privacy_state = $this->getDomainIsPrivate($fields->domain, $package->module_row) ? 'true' : 'false';
+            $vars->whois_privacy_state = $this->getDomainIsPrivate($fields->domain, $package->module_row)
+                ? 'true'
+                : 'false';
         }
 
         $this->view->set('id_protection', $id_protection);
@@ -1387,6 +1389,7 @@ class Opensrs extends RegistrarModule
 
         $contacts = $response->attributes['contact_set'] ?? [];
         foreach ($contacts as $type => &$contact) {
+            $contact['phone'] = $this->formatPhone($contact['phone'], $contact['country']);
             $contact['zip'] = $contact['postal_code'] ?? '00000';
             $contact['external_id'] = $type;
             $contact = (object)$contact;
@@ -1426,6 +1429,7 @@ class Opensrs extends RegistrarModule
         // Build contact set
         $contact_set = [];
         foreach ($vars as $contact) {
+            $contact['phone'] = $this->formatPhone($contact['phone'], $contact['country']);
             $contact['postal_code'] = $contact['zip'] ?? '00000';
             $contact_set[$contact['external_id'] ?? 'owner'] = $contact;
         }
@@ -1901,7 +1905,9 @@ class Opensrs extends RegistrarModule
             Loader::loadModels($this, ['Contacts']);
         }
 
-        return $this->Contacts->intlNumber($number, $country, '.');
+        $number = preg_replace('/[^0-9+]+/', '', $number);
+
+        return trim($this->Contacts->intlNumber($number, $country, '.'));
     }
 
     /**

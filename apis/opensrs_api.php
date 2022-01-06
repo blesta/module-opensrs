@@ -5,8 +5,10 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'opensrs_response.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_domains.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_domains_dns.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_domains_ns.php';
-require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_domains_provisioning.php';
-require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_domains_transfer.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_provisioning.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_transfer.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_ssl.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_users.php';
 
@@ -160,7 +162,7 @@ class OpensrsApi
         $this->buildRecursiveAttributes($dt_assoc, $args);
 
         // Format XML document
-        $dom = new DOMDocument("1.0");
+        $dom = new DOMDocument('1.0');
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = true;
         $dom->loadXML($xml->asXML());
