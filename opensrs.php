@@ -220,7 +220,7 @@ class Opensrs extends RegistrarModule
                     $vars[$key] = $client->country;
                 } elseif (str_contains($key, 'phone')) {
                     $vars[$key] = trim($this->formatPhone(
-                        isset($contact_numbers[0]) ? $contact_numbers[0]->number : null,
+                        isset($contact_numbers[0]) ? $contact_numbers[0]->number : '11111111111',
                         $client->country
                     ));
                 } elseif (str_contains($key, 'email')) {
@@ -1389,6 +1389,7 @@ class Opensrs extends RegistrarModule
 
         $contacts = $response->attributes['contact_set'] ?? [];
         foreach ($contacts as $type => &$contact) {
+            $contact['phone'] = $this->formatPhone($contact['phone'], $contact['country']);
             $contact['zip'] = $contact['postal_code'] ?? '00000';
             $contact['external_id'] = $type;
             $contact = (object)$contact;
@@ -1428,6 +1429,7 @@ class Opensrs extends RegistrarModule
         // Build contact set
         $contact_set = [];
         foreach ($vars as $contact) {
+            $contact['phone'] = $this->formatPhone($contact['phone'], $contact['country']);
             $contact['postal_code'] = $contact['zip'] ?? '00000';
             $contact_set[$contact['external_id'] ?? 'owner'] = $contact;
         }
@@ -1903,7 +1905,9 @@ class Opensrs extends RegistrarModule
             Loader::loadModels($this, ['Contacts']);
         }
 
-        return $this->Contacts->intlNumber($number, $country, '.');
+        $number = preg_replace('/[^0-9+]+/', '', $number);
+
+        return trim($this->Contacts->intlNumber($number, $country, '.'));
     }
 
     /**
