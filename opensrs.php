@@ -274,98 +274,6 @@ class Opensrs extends RegistrarModule
     }
 
     /**
-     * Edits the service on the remote server. Sets Input errors on failure,
-     * preventing the service from being edited.
-     *
-     * @param stdClass $package A stdClass object representing the current package
-     * @param stdClass $service A stdClass object representing the current service
-     * @param array $vars An array of user supplied info to satisfy the request
-     * @param stdClass $parent_package A stdClass object representing the parent
-     *  service's selected package (if the current service is an addon service)
-     * @param stdClass $parent_service A stdClass object representing the parent
-     *  service of the service being edited (if the current service is an addon service)
-     * @return array A numerically indexed array of meta fields to be stored for this service containing:
-     *  - key The key for this meta field
-     *  - value The value for this key
-     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
-     * @see Module::getModule()
-     * @see Module::getModuleRow()
-     */
-    public function editService($package, $service, array $vars = [], $parent_package = null, $parent_service = null)
-    {
-        return null; // All this handled by admin/client tabs instead
-    }
-
-    /**
-     * Cancels the service on the remote server. Sets Input errors on failure,
-     * preventing the service from being canceled.
-     *
-     * @param stdClass $package A stdClass object representing the current package
-     * @param stdClass $service A stdClass object representing the current service
-     * @param stdClass $parent_package A stdClass object representing the parent
-     *  service's selected package (if the current service is an addon service)
-     * @param stdClass $parent_service A stdClass object representing the parent
-     *  service of the service being canceled (if the current service is an addon service)
-     * @return mixed null to maintain the existing meta fields or a numerically
-     *  indexed array of meta fields to be stored for this service containing:
-     *  - key The key for this meta field
-     *  - value The value for this key
-     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
-     * @see Module::getModule()
-     * @see Module::getModuleRow()
-     */
-    public function cancelService($package, $service, $parent_package = null, $parent_service = null)
-    {
-        return null; // Nothing to do
-    }
-
-    /**
-     * Suspends the service on the remote server. Sets Input errors on failure,
-     * preventing the service from being suspended.
-     *
-     * @param stdClass $package A stdClass object representing the current package
-     * @param stdClass $service A stdClass object representing the current service
-     * @param stdClass $parent_package A stdClass object representing the parent
-     *  service's selected package (if the current service is an addon service)
-     * @param stdClass $parent_service A stdClass object representing the parent
-     *  service of the service being suspended (if the current service is an addon service)
-     * @return mixed null to maintain the existing meta fields or a numerically
-     *  indexed array of meta fields to be stored for this service containing:
-     *  - key The key for this meta field
-     *  - value The value for this key
-     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
-     * @see Module::getModule()
-     * @see Module::getModuleRow()
-     */
-    public function suspendService($package, $service, $parent_package = null, $parent_service = null)
-    {
-        return null; // Nothing to do
-    }
-
-    /**
-     * Unsuspends the service on the remote server. Sets Input errors on failure,
-     * preventing the service from being unsuspended.
-     *
-     * @param stdClass $package A stdClass object representing the current package
-     * @param stdClass $service A stdClass object representing the current service
-     * @param stdClass $parent_package A stdClass object representing the parent
-     *  service's selected package (if the current service is an addon service)
-     * @param stdClass $parent_service A stdClass object representing the parent
-     *  service of the service being unsuspended (if the current service is an addon service)
-     * @return mixed null to maintain the existing meta fields or a numerically
-     *  indexed array of meta fields to be stored for this service containing:
-     *  - key The key for this meta field
-     *  - value The value for this key
-     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
-     * @see Module::getModule()
-     * @see Module::getModuleRow()
-     */
-    public function unsuspendService($package, $service, $parent_package = null, $parent_service = null)
-    {
-        return null; // Nothing to do
-    }
-
-    /**
      * Allows the module to perform an action when the service is ready to renew.
      * Sets Input errors on failure, preventing the service from renewing.
      *
@@ -408,35 +316,6 @@ class Opensrs extends RegistrarModule
         $this->renewDomain($fields->domain, $package->module_row, $vars);
 
         return null;
-    }
-
-    /**
-     * Updates the package for the service on the remote server. Sets Input
-     * errors on failure, preventing the service's package from being changed.
-     *
-     * @param stdClass $package_from A stdClass object representing the current package
-     * @param stdClass $package_to A stdClass object representing the new package
-     * @param stdClass $service A stdClass object representing the current service
-     * @param stdClass $parent_package A stdClass object representing the parent
-     *  service's selected package (if the current service is an addon service)
-     * @param stdClass $parent_service A stdClass object representing the parent
-     *  service of the service being changed (if the current service is an addon service)
-     * @return mixed null to maintain the existing meta fields or a numerically
-     *  indexed array of meta fields to be stored for this service containing:
-     *  - key The key for this meta field
-     *  - value The value for this key
-     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
-     * @see Module::getModule()
-     * @see Module::getModuleRow()
-     */
-    public function changeServicePackage(
-        $package_from,
-        $package_to,
-        $service,
-        $parent_package = null,
-        $parent_service = null
-    ) {
-        return null; // Nothing to do
     }
 
     /**
@@ -639,17 +518,6 @@ class Opensrs extends RegistrarModule
     {
         // Same as adding
         return $this->addModuleRow($vars);
-    }
-
-    /**
-     * Deletes the module row on the remote server. Sets Input errors on failure,
-     * preventing the row from being deleted.
-     *
-     * @param stdClass $module_row The stdClass representation of the existing module row
-     */
-    public function deleteModuleRow($module_row)
-    {
-        // Nothing to do
     }
 
     /**
@@ -894,45 +762,6 @@ class Opensrs extends RegistrarModule
     }
 
     /**
-     * Returns all fields to display to an admin attempting to edit a service with the module
-     *
-     * @param stdClass $package A stdClass object representing the selected package
-     * @param $vars stdClass A stdClass object representing a set of post fields
-     * @return ModuleFields A ModuleFields object, containg the fields to render as well
-     *  as any additional HTML markup to include
-     */
-    public function getAdminEditFields($package, $vars = null)
-    {
-        return new ModuleFields();
-    }
-
-    /**
-     * Fetches the HTML content to display when viewing the service info in the
-     * admin interface.
-     *
-     * @param stdClass $service A stdClass object representing the service
-     * @param stdClass $package A stdClass object representing the service's package
-     * @return string HTML content containing information to display when viewing the service info
-     */
-    public function getAdminServiceInfo($service, $package)
-    {
-        return '';
-    }
-
-    /**
-     * Fetches the HTML content to display when viewing the service info in the
-     * client interface.
-     *
-     * @param stdClass $service A stdClass object representing the service
-     * @param stdClass $package A stdClass object representing the service's package
-     * @return string HTML content containing information to display when viewing the service info
-     */
-    public function getClientServiceInfo($service, $package)
-    {
-        return '';
-    }
-
-    /**
      * Returns all tabs to display to an admin when managing a service
      *
      * @param stdClass $service A stdClass object representing the service
@@ -943,34 +772,15 @@ class Opensrs extends RegistrarModule
     {
         Loader::loadModels($this, ['Packages']);
 
-        $package = $this->Packages->get($service->package_id ?? $service->package->id);
-
         $tabs = [
             'tabWhois' => Language::_('Opensrs.tab_whois.title', true),
             'tabNameservers' => Language::_('Opensrs.tab_nameservers.title', true),
             'tabSettings' => Language::_('Opensrs.tab_settings.title', true)
         ];
-
+        
         // Check if DNS Management is enabled
-        if (
-            $this->featurePackageEnabled('dns_management', $package)
-            && !$this->featureServiceEnabled('dns_management', $service)
-        ) {
+        if (!$this->featureServiceEnabled('dns_management', $service)) {
             unset($tabs['tabNameservers']);
-        }
-
-        // Check if EPP Code or ID protection is enabled
-        if (
-            (
-                $this->featurePackageEnabled('epp_code', $package)
-                && !$this->featureServiceEnabled('epp_code', $service)
-            ) &&
-            (
-                $this->featurePackageEnabled('id_protection', $package)
-                && !$this->featureServiceEnabled('id_protection', $service)
-            )
-        ) {
-            unset($tabs['tabSettings']);
         }
 
         return $tabs;
@@ -993,8 +803,6 @@ class Opensrs extends RegistrarModule
     {
         Loader::loadModels($this, ['Packages']);
 
-        $package = $this->Packages->get($service->package_id ?? $service->package->id);
-
         $tabs = [
             'tabClientWhois' => [
                 'name' => Language::_('Opensrs.tab_whois.title', true),
@@ -1009,18 +817,9 @@ class Opensrs extends RegistrarModule
                 'icon' => 'fas fa-cog'
             ]
         ];
-
+        
         // Check if DNS Management is enabled
-        if (
-            (
-                $this->featurePackageEnabled('epp_code', $package)
-                && !$this->featureServiceEnabled('epp_code', $service)
-            ) &&
-            (
-                $this->featurePackageEnabled('id_protection', $package)
-                && !$this->featureServiceEnabled('id_protection', $service)
-            )
-        ) {
+        if (!$this->featureServiceEnabled('dns_management', $service)) {
             unset($tabs['tabClientNameservers']);
         }
 
@@ -1268,11 +1067,11 @@ class Opensrs extends RegistrarModule
         $vars = new stdClass();
         $fields = $this->serviceFieldsToObject($service->fields);
 
-        // Determine if this service has access to id_protection or epp_code
-        $id_protection = !$this->featurePackageEnabled('id_protection', $package)
-            || $this->featureServiceEnabled('id_protection', $service);
-        $epp_code = !$this->featurePackageEnabled('epp_code', $package)
-            || $this->featureServiceEnabled('epp_code', $service);
+        // Determine if this service has access to id_protection
+        $id_protection = $this->featureServiceEnabled('id_protection', $service);
+        
+        // Determine if this service has access to epp_code
+        $epp_code = $package->meta->epp_code ?? '0';
 
         if (!empty($post)) {
             // Set domain status
@@ -1919,43 +1718,13 @@ class Opensrs extends RegistrarModule
      */
     private function featureServiceEnabled($feature, $service)
     {
-        // Get package
-        Loader::loadModels($this, ['Packages', 'Companies']);
-        $package = $this->Packages->get($service->package_id ?? $service->package->id);
-
-        // Get company settings
-        $company_setting = $this->Companies->getSetting($package->company_id, 'domains_' . $feature . '_option_group');
-        $option_group = $company_setting->value ?? null;
-
         // Get service option groups
-        $service_options = [];
         foreach ($service->options as $option) {
-            $service_options[] = $option->option_id;
+            if ($option->option_name == $feature) {
+                return true;
+            }
         }
 
-        return in_array($option_group, $service_options);
-    }
-
-    /**
-     * Checks if a feature is enabled for a given package
-     *
-     * @param string $feature The name of the feature to check if it's enabled (e.g. id_protection)
-     * @param stdClass $package An object representing the package
-     * @return bool True if the feature is enabled, false otherwise
-     */
-    private function featurePackageEnabled($feature, $package)
-    {
-        // Get company settings
-        Loader::loadModels($this, ['Companies']);
-        $company_setting = $this->Companies->getSetting($package->company_id, 'domains_' . $feature . '_option_group');
-        $option_group = $company_setting->value ?? null;
-
-        // Get package option groups
-        $package_options = [];
-        foreach ($package->option_groups as $option_group) {
-            $package_options[] = $option_group->id;
-        }
-
-        return in_array($option_group, $package_options);
+        return false;
     }
 }
