@@ -257,6 +257,17 @@ class Opensrs extends RegistrarModule
                 return;
             }
 
+            // Set nameservers
+            $this->setDomainNameservers($vars['domain'], $package->module_row, [
+                $fields['nameserver_list'][0]['name'] ?? '',
+                $fields['nameserver_list'][1]['name'] ?? '',
+                $fields['nameserver_list'][2]['name'] ?? '',
+                $fields['nameserver_list'][3]['name'] ?? '',
+            ]);
+
+            // Ignore nameserver errors
+            $this->Input->setErrors([]);
+
             return [['key' => 'domain', 'value' => $vars['domain'], 'encrypted' => 0]];
         }
 
@@ -1130,13 +1141,13 @@ class Opensrs extends RegistrarModule
 
         $domains = new OpensrsDomains($api);
         $result = $domains->lookup(['domain' => $domain]);
+        $response = $result->response();
+
+        $this->logRequest($api, $result);
 
         if ($result->status() != 'OK') {
             return false;
         }
-        $response = $result->response();
-
-        $this->getDomainNameServers($domain, $module_row_id);
 
         return strtolower($response->attributes['status']) == 'available';
     }
