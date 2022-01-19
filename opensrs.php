@@ -1130,13 +1130,13 @@ class Opensrs extends RegistrarModule
 
         $domains = new OpensrsDomains($api);
         $result = $domains->lookup(['domain' => $domain]);
+        $response = $result->response();
+
+        $this->logRequest($api, $result);
 
         if ($result->status() != 'OK') {
             return false;
         }
-        $response = $result->response();
-
-        $this->getDomainNameServers($domain, $module_row_id);
 
         return strtolower($response->attributes['status']) == 'available';
     }
