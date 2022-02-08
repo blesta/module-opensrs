@@ -1016,11 +1016,11 @@ Configure::set('Opensrs.email_templates', [
         'lang' => 'en_us',
         'text' => 'Your new domain has been successfully registered!
 
-Domain: {service.DomainName}
+Domain: {service.domain}
 
 Thank you for your business!',
         'html' => '<p>Your new domain has been successfully registered!</p>
-<p>Domain: {service.DomainName}</p>
+<p>Domain: {service.domain}</p>
 <p>Thank you for your business!</p>'
     ]
 ]);
