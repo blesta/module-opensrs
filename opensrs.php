@@ -788,11 +788,6 @@ class Opensrs extends RegistrarModule
             'tabNameservers' => Language::_('Opensrs.tab_nameservers.title', true),
             'tabSettings' => Language::_('Opensrs.tab_settings.title', true)
         ];
-        
-        // Check if DNS Management is enabled
-        if (!$this->featureServiceEnabled('dns_management', $service)) {
-            unset($tabs['tabNameservers']);
-        }
 
         return $tabs;
     }
@@ -828,11 +823,6 @@ class Opensrs extends RegistrarModule
                 'icon' => 'fas fa-cog'
             ]
         ];
-        
-        // Check if DNS Management is enabled
-        if (!$this->featureServiceEnabled('dns_management', $service)) {
-            unset($tabs['tabClientNameservers']);
-        }
 
         return $tabs;
     }
