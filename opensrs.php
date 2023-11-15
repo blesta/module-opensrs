@@ -102,14 +102,12 @@ class Opensrs extends RegistrarModule
 
             // Set the registration prices
             $register_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'new']));
-            var_dump($register_response->response());
-            die;
             $this->processResponse($api, $register_response);
             if ($register_response->status() != 'OK') {
                 continue;
             }
             foreach (range(1, 10) as $years) {
-                $pricing[$tld][$years]['register'] = $register_response->response();
+                $pricing[$tld]['register'] = $register_response->response();
             }
 
             // Set the renewal prices
@@ -119,7 +117,7 @@ class Opensrs extends RegistrarModule
                 continue;
             }
             foreach (range(1, 10) as $years) {
-                $pricing[$tld][$years]['renew'] = $renew_response->response();
+                $pricing[$tld]['renew'] = $renew_response->response();
             }
 
             // Set the transfer prices
@@ -129,7 +127,7 @@ class Opensrs extends RegistrarModule
                 continue;
             }
             foreach (range(1, 10) as $years) {
-                $pricing[$tld][$years]['transfer'] = $transfer_response->response();
+                $pricing[$tld]['transfer'] = $transfer_response->response();
             }
         }
         unset($tld);
@@ -173,19 +171,19 @@ class Opensrs extends RegistrarModule
                         }
 
                         $register_price = $this->Currencies->convert(
-                            ($tld_data[$years]['register']->productprice->price ?? 0) * $years,
+                            ($tld_data['register']->attributes['prices'][$years] ?? 0),
                             'USD',
                             $currency->code,
                             Configure::get('Blesta.company_id')
                         );
                         $transfer_price = $this->Currencies->convert(
-                            ($tld_data[$years]['transfer']->productprice->price ?? 0) * $years,
+                            ($tld_data['transfer']->attributes['prices'][$years] ?? 0),
                             'USD',
                             $currency->code,
                             Configure::get('Blesta.company_id')
                         );
                         $renewal_price = $this->Currencies->convert(
-                            ($tld_data[$years]['renew']->productprice->price ?? 0) * $years,
+                            ($tld_data['renew']->attributes['prices'][$years] ?? 0),
                             'USD',
                             $currency->code,
                             Configure::get('Blesta.company_id')
