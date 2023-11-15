@@ -28,6 +28,183 @@ class Opensrs extends RegistrarModule
     }
 
     /**
+     * Get a list of the TLD prices
+     *
+     * @param int $module_row_id The ID of the module row to fetch for the current module
+     * @return array A list of all TLDs and their pricing
+     *    [tld => [currency => [year# => ['register' => price, 'transfer' => price, 'renew' => price]]]]
+     */
+    public function getTldPricing($module_row_id = null)
+    {
+        return $this->getFilteredTldPricing($module_row_id);
+    }
+
+    /**
+     * Get a filtered list of the TLD prices
+     *
+     * @param int $module_row_id The ID of the module row to fetch for the current module
+     * @param array $filters A list of criteria by which to filter fetched pricings including but not limited to:
+     *
+     *  - tlds A list of tlds for which to fetch pricings
+     *  - currencies A list of currencies for which to fetch pricings
+     *  - terms A list of terms for which to fetch pricings
+     * @return array A list of all TLDs and their pricing
+     *    [tld => [currency => [year# => ['register' => price, 'transfer' => price, 'renew' => price]]]]
+     * @see https://api.enom.com/docs/pe_getproductprice
+     */
+    public function getFilteredTldPricing($module_row_id = null, $filters = [])
+    {
+        Loader::loadModels($this, ['Currencies']);
+
+        // Get all TLDs
+        $tlds = $this->getTlds();
+
+        // Filter TLDs
+        if (!empty($filters['tlds']) && is_array($filters['tlds'])) {
+            $tlds = [];
+            foreach ($filters['tlds'] as $tld) {
+                $tlds[] = '.' . ltrim($tld, '.');
+            }
+            unset($tld);
+        }
+
+        // Fetch the TLDs results from the cache, if they exist
+        $cache = Cache::fetchCache(
+            'tlds_prices',
+            Configure::get('Blesta.company_id') . DS . 'modules' . DS . 'opensrs' . DS
+        );
+
+        if ($cache) {
+            $pricing = unserialize(base64_decode($cache));
+        } else {
+            $pricing = [];
+        }
+
+
+        // Fetch pricing from the registrar
+        $row = $this->getModuleRow($module_row_id);
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+        $domains = new OpensrsDomains($api);
+
+        // Get pricing
+        foreach ($tlds as $tld) {
+            if (isset($pricing[$tld])) {
+                continue;
+            }
+
+            $pricing[$tld] = [];
+
+            $vars = [
+                'domain' => 'tldpricingtestdomainblesta' . $tld,
+                'period' => 1,
+                'all_periods' => 1
+            ];
+
+            // Set the registration prices
+            $register_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'new']));
+            var_dump($register_response->response());
+            die;
+            $this->processResponse($api, $register_response);
+            if ($register_response->status() != 'OK') {
+                continue;
+            }
+            foreach (range(1, 10) as $years) {
+                $pricing[$tld][$years]['register'] = $register_response->response();
+            }
+
+            // Set the renewal prices
+            $renew_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'renewal']));
+            $this->processResponse($api, $renew_response);
+            if ($renew_response->status() != 'OK') {
+                continue;
+            }
+            foreach (range(1, 10) as $years) {
+                $pricing[$tld][$years]['renew'] = $renew_response->response();
+            }
+
+            // Set the transfer prices
+            $transfer_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'transfer']));
+            $this->processResponse($api, $transfer_response);
+            if ($transfer_response->status() != 'OK') {
+                continue;
+            }
+            foreach (range(1, 10) as $years) {
+                $pricing[$tld][$years]['transfer'] = $transfer_response->response();
+            }
+        }
+        unset($tld);
+
+        // Save pricing in cache
+        if (Configure::get('Caching.on') && is_writable(CACHEDIR)) {
+            try {
+                Cache::writeCache(
+                    'tlds_prices',
+                    base64_encode(serialize($pricing)),
+                    strtotime(Configure::get('Blesta.cache_length')) - time(),
+                    Configure::get('Blesta.company_id') . DS . 'modules' . DS . 'opensrs' . DS
+                );
+            } catch (Exception $e) {
+                // Write to cache failed, so disable caching
+                Configure::set('Caching.on', false);
+            }
+        }
+
+        // Save the TLDs results to the cache
+        $tld_yearly_prices = [];
+        if (!empty($pricing)) {
+            $currencies = $this->Currencies->getAll(Configure::get('Blesta.company_id'));
+
+            foreach ($pricing as $tld => $tld_data) {
+                // Filter by 'tlds'
+                if (isset($filters['tlds']) && !in_array($tld, $filters['tlds'])) {
+                    continue;
+                }
+
+                foreach ($currencies as $currency) {
+                    // Filter by 'currencies'
+                    if (isset($filters['currencies']) && !in_array($currency->code, $filters['currencies'])) {
+                        continue;
+                    }
+
+                    foreach (range(1, 10) as $years) {
+                        // Filter by 'terms'
+                        if (isset($filters['terms']) && !in_array($years, $filters['terms'])) {
+                            continue;
+                        }
+
+                        $register_price = $this->Currencies->convert(
+                            ($tld_data[$years]['register']->productprice->price ?? 0) * $years,
+                            'USD',
+                            $currency->code,
+                            Configure::get('Blesta.company_id')
+                        );
+                        $transfer_price = $this->Currencies->convert(
+                            ($tld_data[$years]['transfer']->productprice->price ?? 0) * $years,
+                            'USD',
+                            $currency->code,
+                            Configure::get('Blesta.company_id')
+                        );
+                        $renewal_price = $this->Currencies->convert(
+                            ($tld_data[$years]['renew']->productprice->price ?? 0) * $years,
+                            'USD',
+                            $currency->code,
+                            Configure::get('Blesta.company_id')
+                        );
+
+                        $tld_yearly_prices[$tld][$currency->code][$years] = [
+                            'register' => $register_price,
+                            'transfer' => $transfer_price,
+                            'renew' => $renewal_price,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $tld_yearly_prices;
+    }
+
+    /**
      * Attempts to validate service info. This is the top-level error checking method. Sets Input errors on failure.
      *
      * @param stdClass $package A stdClass object representing the selected package
@@ -1070,7 +1247,7 @@ class Opensrs extends RegistrarModule
 
         // Determine if this service has access to id_protection
         $id_protection = $this->featureServiceEnabled('id_protection', $service);
-        
+
         // Determine if this service has access to epp_code
         $epp_code = $package->meta->epp_code ?? '0';
 
