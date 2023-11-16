@@ -842,7 +842,7 @@ class Opensrs extends RegistrarModule
             $fields = array_merge(
                 Configure::get('Opensrs.nameserver_fields'),
                 Configure::get('Opensrs.domain_fields'),
-                isset($tld) ? Configure::get('Opensrs.domain_fields' . $tld) : []
+                isset($tld) ? (Configure::get('Opensrs.domain_fields' . $tld) ?? []) : []
             );
 
             // We should already have the domain name don't make editable
