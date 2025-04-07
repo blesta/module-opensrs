@@ -351,6 +351,70 @@ class Opensrs extends RegistrarModule
             );
         }
 
+        // Set all whois info from client
+        if (!isset($this->Clients)) {
+            Loader::loadModels($this, ['Clients']);
+        }
+        if (!isset($this->Contacts)) {
+            Loader::loadModels($this, ['Contacts']);
+        }
+
+        $client = $this->Clients->get($vars['client_id']);
+        if ($client) {
+            $contact_numbers = $this->Contacts->getNumbers($client->contact_id);
+        }
+
+        foreach ($whois_fields as $key => $value) {
+            if (str_contains($key, 'first_name')) {
+                $vars[$key] = $client->first_name;
+            } elseif (str_contains($key, 'last_name')) {
+                $vars[$key] = $client->last_name;
+            } elseif (str_contains($key, 'org_name')) {
+                $vars[$key] = $client->company;
+            } elseif (str_contains($key, 'address1')) {
+                $vars[$key] = $client->address1;
+            } elseif (str_contains($key, 'address2')) {
+                $vars[$key] = $client->address2;
+            } elseif (str_contains($key, 'city')) {
+                $vars[$key] = $client->city;
+            } elseif (str_contains($key, 'state')) {
+                $vars[$key] = $client->state;
+            } elseif (str_contains($key, 'postal_code')) {
+                $vars[$key] = $client->zip;
+            } elseif (str_contains($key, 'country')) {
+                $vars[$key] = $client->country;
+            } elseif (str_contains($key, 'phone')) {
+                $vars[$key] = trim($this->formatPhone(
+                    isset($contact_numbers[0]) ? $contact_numbers[0]->number : '11111111111',
+                    $client->country
+                ));
+            } elseif (str_contains($key, 'email')) {
+                $vars[$key] = $client->email;
+            }
+
+            if (empty($vars[$key])) {
+                if (str_contains($key, 'postal_code')) {
+                    $vars[$key] = '33064';
+                } else {
+                    $vars[$key] = 'NA';
+                }
+            }
+        }
+
+        // Set country for .asia domains
+        if ($tld == '.asia') {
+            $vars['tld_data[ced_info][locality_country]'] = $client->country;
+        }
+
+        // Build contacts array
+        Loader::loadHelpers($this, ['DataStructure']);
+        $this->Array = $this->DataStructure->create('Array');
+
+        $fields = $this->Array->unflatten(
+            array_intersect_key($this->Array->flatten($vars), $input_fields)
+        );
+        $fields['client_id'] = $vars['client_id'];
+
         if (isset($vars['use_module']) && $vars['use_module'] == 'true') {
             // Set registration period
             $vars['period'] = 1;
@@ -360,71 +424,6 @@ class Opensrs extends RegistrarModule
                     break;
                 }
             }
-
-            // Set all whois info from client
-            if (!isset($this->Clients)) {
-                Loader::loadModels($this, ['Clients']);
-            }
-            if (!isset($this->Contacts)) {
-                Loader::loadModels($this, ['Contacts']);
-            }
-
-            $client = $this->Clients->get($vars['client_id']);
-            if ($client) {
-                $contact_numbers = $this->Contacts->getNumbers($client->contact_id);
-            }
-
-            foreach ($whois_fields as $key => $value) {
-                if (str_contains($key, 'first_name')) {
-                    $vars[$key] = $client->first_name;
-                } elseif (str_contains($key, 'last_name')) {
-                    $vars[$key] = $client->last_name;
-                } elseif (str_contains($key, 'org_name')) {
-                    $vars[$key] = $client->company;
-                } elseif (str_contains($key, 'address1')) {
-                    $vars[$key] = $client->address1;
-                } elseif (str_contains($key, 'address2')) {
-                    $vars[$key] = $client->address2;
-                } elseif (str_contains($key, 'city')) {
-                    $vars[$key] = $client->city;
-                } elseif (str_contains($key, 'state')) {
-                    $vars[$key] = $client->state;
-                } elseif (str_contains($key, 'postal_code')) {
-                    $vars[$key] = $client->zip;
-                } elseif (str_contains($key, 'country')) {
-                    $vars[$key] = $client->country;
-                } elseif (str_contains($key, 'phone')) {
-                    $vars[$key] = trim($this->formatPhone(
-                        isset($contact_numbers[0]) ? $contact_numbers[0]->number : '11111111111',
-                        $client->country
-                    ));
-                } elseif (str_contains($key, 'email')) {
-                    $vars[$key] = $client->email;
-                }
-
-                if (empty($vars[$key])) {
-                    if (str_contains($key, 'postal_code')) {
-                        $vars[$key] = '33064';
-                    } else {
-                        $vars[$key] = 'NA';
-                    }
-                }
-            }
-
-            // Set country for .asia domains
-            if ($tld == '.asia') {
-                $vars['tld_data[ced_info][locality_country]'] = $client->country;
-            }
-
-            // Build contacts array
-            Loader::loadHelpers($this, ['DataStructure']);
-            $this->Array = $this->DataStructure->create('Array');
-
-            $fields = $this->Array->unflatten(
-                array_intersect_key($this->Array->flatten($vars), $input_fields)
-            );
-            $fields['client_id'] = $vars['client_id'];
-
             // Register domain
             $this->registerDomain($vars['domain'], $package->module_row, $fields);
 
@@ -447,7 +446,6 @@ class Opensrs extends RegistrarModule
         }
 
         $meta = [];
-        $fields = array_intersect_key($vars, $input_fields);
         foreach ($fields as $key => $value) {
             $meta[] = [
                 'key' => $key,
@@ -849,6 +847,9 @@ class Opensrs extends RegistrarModule
             $fields['domain']['type'] = 'hidden';
             $fields['domain']['label'] = null;
 
+            Loader::loadHelpers($this, ['DataStructure']);
+            $this->Array = $this->DataStructure->create('Array');
+            $vars = (object)$this->Array->flatten((array)$vars);
             $module_fields = $this->arrayToModuleFields($fields, null, $vars);
 
             // Build the domain fields
