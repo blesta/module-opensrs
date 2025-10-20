@@ -1717,7 +1717,7 @@ class Opensrs extends RegistrarModule
         }
         $response = $result->response();
 
-        return $this->Date->format($format, $response->attributes['registry_createdate'] ?? date('c'));
+        return $this->Date->format($format, $response->attributes['registry_createdate'] ?? null);
     }
 
     /**
@@ -1747,7 +1747,7 @@ class Opensrs extends RegistrarModule
         }
         $response = $result->response();
 
-        return $this->Date->format($format, $response->attributes['expiredate'] ?? date('c'));
+        return $this->Date->format($format, $response->attributes['expiredate'] ?? null);
     }
 
     /**
