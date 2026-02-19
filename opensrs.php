@@ -170,6 +170,11 @@ class Opensrs extends RegistrarModule
                             continue;
                         }
 
+                        // Skip if pricing data is incomplete
+                        if (!isset($tld_data['register']) || !isset($tld_data['transfer']) || !isset($tld_data['renew'])) {
+                            continue;
+                        }
+
                         $register_price = $this->Currencies->convert(
                             ($tld_data['register']->attributes['prices'][$years] ?? 0),
                             'USD',
@@ -1636,6 +1641,22 @@ class Opensrs extends RegistrarModule
         ];
         $fields = array_merge($params, $vars);
 
+        // Filter out empty nameservers and add sortorder
+        if (isset($fields['nameserver_list']) && is_array($fields['nameserver_list'])) {
+            $fields['nameserver_list'] = array_values(array_filter(
+                $fields['nameserver_list'],
+                function ($ns) {
+                    return !empty($ns['name']);
+                }
+            ));
+
+            // Add sortorder to each nameserver (required by OpenSRS API)
+            foreach ($fields['nameserver_list'] as $index => &$ns) {
+                $ns['sortorder'] = $index + 1;
+            }
+            unset($ns);
+        }
+
         // Register domain
         $domains = new OpensrsDomainsProvisioning($api);
         $response = $domains->swRegister($fields);
@@ -1718,7 +1739,45 @@ class Opensrs extends RegistrarModule
         }
         $response = $result->response();
 
-        return $this->Date->format($format, $response->attributes['expiredate'] ?? date('c'));
+        if (empty($response->attributes['expiredate'])) {
+            return false;
+        }
+
+        return $this->Date->format($format, $response->attributes['expiredate']);
+    }
+
+    /**
+     * Gets the domain registration date
+     *
+     * @param stdClass $service The service belonging to the domain to lookup
+     * @param string $format The format to return the registration date in
+     * @return string The domain registration date in UTC time in the given format
+     * @see Services::get()
+     */
+    public function getRegistrationDate($service, $format = 'Y-m-d H:i:s')
+    {
+        Loader::loadHelpers($this, ['Date']);
+
+        $domain = $this->getServiceDomain($service);
+        $module_row_id = $service->module_row_id ?? null;
+
+        $row = $this->getModuleRow($module_row_id);
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $domains = new OpensrsDomains($api);
+        $result = $domains->get(['domain' => $domain, 'type' => 'all_info']);
+        $this->processResponse($api, $result);
+
+        if ($result->status() != 'OK') {
+            return false;
+        }
+        $response = $result->response();
+
+        if (empty($response->attributes['registry_createdate'])) {
+            return false;
+        }
+
+        return $this->Date->format($format, $response->attributes['registry_createdate']);
     }
 
     /**
