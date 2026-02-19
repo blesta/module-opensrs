@@ -1718,7 +1718,11 @@ class Opensrs extends RegistrarModule
         }
         $response = $result->response();
 
-        return $this->Date->format($format, $response->attributes['expiredate'] ?? date('c'));
+        if (empty($response->attributes['expiredate'])) {
+            return false;
+        }
+
+        return $this->Date->format($format, $response->attributes['expiredate']);
     }
 
     /**
