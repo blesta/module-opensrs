@@ -170,6 +170,11 @@ class Opensrs extends RegistrarModule
                             continue;
                         }
 
+                        // Skip if pricing data is incomplete
+                        if (!isset($tld_data['register']) || !isset($tld_data['transfer']) || !isset($tld_data['renew'])) {
+                            continue;
+                        }
+
                         $register_price = $this->Currencies->convert(
                             ($tld_data['register']->attributes['prices'][$years] ?? 0),
                             'USD',
