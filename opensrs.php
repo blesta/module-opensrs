@@ -1636,6 +1636,22 @@ class Opensrs extends RegistrarModule
         ];
         $fields = array_merge($params, $vars);
 
+        // Filter out empty nameservers and add sortorder
+        if (isset($fields['nameserver_list']) && is_array($fields['nameserver_list'])) {
+            $fields['nameserver_list'] = array_values(array_filter(
+                $fields['nameserver_list'],
+                function ($ns) {
+                    return !empty($ns['name']);
+                }
+            ));
+
+            // Add sortorder to each nameserver (required by OpenSRS API)
+            foreach ($fields['nameserver_list'] as $index => &$ns) {
+                $ns['sortorder'] = $index + 1;
+            }
+            unset($ns);
+        }
+
         // Register domain
         $domains = new OpensrsDomainsProvisioning($api);
         $response = $domains->swRegister($fields);
