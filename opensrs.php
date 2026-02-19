@@ -1726,6 +1726,40 @@ class Opensrs extends RegistrarModule
     }
 
     /**
+     * Gets the domain registration date
+     *
+     * @param stdClass $service The service belonging to the domain to lookup
+     * @param string $format The format to return the registration date in
+     * @return string The domain registration date in UTC time in the given format
+     * @see Services::get()
+     */
+    public function getRegistrationDate($service, $format = 'Y-m-d H:i:s')
+    {
+        Loader::loadHelpers($this, ['Date']);
+
+        $domain = $this->getServiceDomain($service);
+        $module_row_id = $service->module_row_id ?? null;
+
+        $row = $this->getModuleRow($module_row_id);
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $domains = new OpensrsDomains($api);
+        $result = $domains->get(['domain' => $domain, 'type' => 'all_info']);
+        $this->processResponse($api, $result);
+
+        if ($result->status() != 'OK') {
+            return false;
+        }
+        $response = $result->response();
+
+        if (empty($response->attributes['registry_createdate'])) {
+            return false;
+        }
+
+        return $this->Date->format($format, $response->attributes['registry_createdate']);
+    }
+
+    /**
      * Gets the domain name from the given service
      *
      * @param stdClass $service The service from which to extract the domain name
