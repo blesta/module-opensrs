@@ -516,6 +516,156 @@ class Opensrs extends RegistrarModule
     }
 
     /**
+     * Cancels the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being canceled.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being canceled (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function cancelService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return null;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        $domains_provisioning = new OpensrsDomainsProvisioning($api);
+        $response = $domains_provisioning->modify([
+            'domain' => $fields->domain,
+            'data' => 'expire_action',
+            'affect_domains' => '0',
+            'auto_renew' => '0',
+            'let_expire' => '1'
+        ]);
+        $this->processResponse($api, $response);
+
+        return null;
+    }
+
+    /**
+     * Suspends the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being suspended.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being suspended (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function suspendService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        return $this->cancelService($package, $service, $parent_package, $parent_service);
+    }
+
+    /**
+     * Unsuspends the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being unsuspended.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being unsuspended (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function unsuspendService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return null;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        $domains_provisioning = new OpensrsDomainsProvisioning($api);
+        $response = $domains_provisioning->modify([
+            'domain' => $fields->domain,
+            'data' => 'expire_action',
+            'affect_domains' => '0',
+            'auto_renew' => '1',
+            'let_expire' => '0'
+        ]);
+        $this->processResponse($api, $response);
+
+        return null;
+    }
+
+    /**
+     * Edits the service on the remote server.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $vars An array of user supplied info to satisfy the request
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being edited (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function editService($package, $service, array $vars = [], $parent_package = null, $parent_service = null)
+    {
+        return null;
+    }
+
+    /**
+     * Restores a domain in the redemption grace period
+     *
+     * @param string $domain The domain to restore
+     * @param int $module_row_id The ID of the module row to fetch for the current module
+     * @return bool True if the domain was successfully restored, false otherwise
+     */
+    public function restoreDomain($domain, $module_row_id = null)
+    {
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $domains = new OpensrsDomainsProvisioning($api);
+        $response = $domains->redeem(['domain' => $domain]);
+        $this->processResponse($api, $response);
+
+        return $response->status() == 'OK';
+    }
+
+    /**
      * Validates input data when attempting to add a package, returns the meta
      * data to save when adding a package. Performs any action required to add
      * the package on the remote server. Sets Input errors on failure,
