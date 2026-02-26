@@ -1136,11 +1136,11 @@ Configure::set('Opensrs.domain_fields.de', [
 // .FR
 Configure::set('Opensrs.domain_fields.fr', [
     'tld_data[registrant_extra_info][registrant_type]' => [
-        'label' => Language::_('Opensrs.domain.registrant_type', true),
+        'label' => Language::_('Opensrs.domain.fr_registrant_type', true),
         'type' => 'select',
         'options' => [
-            'individual' => Language::_('Opensrs.domain.registrant_type.individual', true),
-            'organization' => Language::_('Opensrs.domain.registrant_type.company', true),
+            'individual' => Language::_('Opensrs.domain.fr_registrant_type.individual', true),
+            'organization' => Language::_('Opensrs.domain.fr_registrant_type.organization', true),
         ]
     ],
     'tld_data[registrant_extra_info][registrant_vat_id]' => [

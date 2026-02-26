@@ -20,7 +20,7 @@
                     <li>
                         <?php
                         $this->Form->label($this->_('Opensrs.row_meta.key', true), 'key');
-                        $this->Form->fieldText('key', ($vars->key ?? null), ['id' => 'key']);
+                        $this->Form->fieldPassword('key', ['id' => 'key', 'value' => ($vars->key ?? null)]);
                         ?>
                     </li>
                     <li>
