@@ -1122,11 +1122,22 @@ class Opensrs extends RegistrarModule
     {
         Loader::loadModels($this, ['Packages']);
 
+        $package = null;
+        if (isset($service->package) && $service->package) {
+            $package = $service->package;
+        } elseif (isset($service->pricing_id)) {
+            $package = $this->Packages->getByPricingId($service->pricing_id);
+        }
+
         $tabs = [
             'tabWhois' => Language::_('Opensrs.tab_whois.title', true),
             'tabNameservers' => Language::_('Opensrs.tab_nameservers.title', true),
             'tabSettings' => Language::_('Opensrs.tab_settings.title', true)
         ];
+
+        if ($this->featureServiceEnabled('dns_management', $service)) {
+            $tabs['tabDns'] = Language::_('Opensrs.tab_dns.title', true);
+        }
 
         return $tabs;
     }
@@ -1162,6 +1173,13 @@ class Opensrs extends RegistrarModule
                 'icon' => 'fas fa-cog'
             ]
         ];
+
+        if ($this->featureServiceEnabled('dns_management', $service)) {
+            $tabs['tabClientDns'] = [
+                'name' => Language::_('Opensrs.tab_dns.title', true),
+                'icon' => 'fas fa-globe'
+            ];
+        }
 
         return $tabs;
     }
@@ -1254,6 +1272,36 @@ class Opensrs extends RegistrarModule
     public function tabClientSettings($package, $service, array $get = null, array $post = null, array $files = null)
     {
         return $this->manageSettings('tab_client_settings', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin DNS tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabDns($package, $service, array $get = null, array $post = null, array $files = null)
+    {
+        return $this->manageDns('tab_dns', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Client DNS tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabClientDns($package, $service, array $get = null, array $post = null, array $files = null)
+    {
+        return $this->manageDns('tab_client_dns', $package, $service, $get, $post, $files);
     }
 
     /**
@@ -1454,6 +1502,144 @@ class Opensrs extends RegistrarModule
         $this->view->set('id_protection', $id_protection);
         $this->view->set('epp_code', $epp_code);
         $this->view->set('vars', $vars);
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
+    }
+
+    /**
+     * Handle DNS zone management
+     *
+     * @param string $view The view to use
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    private function manageDns(
+        $view,
+        $package,
+        $service,
+        array $get = null,
+        array $post = null,
+        array $files = null
+    ) {
+        $this->view = new View($view, 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $vars = new stdClass();
+        $fields = $this->serviceFieldsToObject($service->fields);
+        $dns = new OpensrsDomainsDns($api);
+
+        if (!empty($post)) {
+            if (isset($post['action'])) {
+                if ($post['action'] == 'add_record') {
+                    // Get existing records, add new one, set zone
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        // Add the new record
+                        $new_record = [
+                            'type' => $post['type'] ?? 'A',
+                            'subdomain' => $post['subdomain'] ?? '',
+                            'ip_address' => $post['ip_address'] ?? '',
+                            'priority' => $post['priority'] ?? '',
+                            'ttl' => $post['ttl'] ?? '3600'
+                        ];
+
+                        // Build the records for setDnsZone
+                        $type_key = strtolower($new_record['type']);
+                        if (!isset($records[$type_key]) || !is_array($records[$type_key])) {
+                            $records[$type_key] = [];
+                        }
+                        $records[$type_key][] = $new_record;
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                } elseif ($post['action'] == 'delete_record') {
+                    // Get existing records, remove specified one, set zone
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        $delete_type = strtolower($post['record_type'] ?? '');
+                        $delete_index = (int)($post['record_index'] ?? -1);
+
+                        if (isset($records[$delete_type][$delete_index])) {
+                            unset($records[$delete_type][$delete_index]);
+                            $records[$delete_type] = array_values($records[$delete_type]);
+                        }
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                } elseif ($post['action'] == 'reset_zone') {
+                    $response = $dns->resetDnsZone([
+                        'domain' => $fields->domain
+                    ]);
+                    $this->processResponse($api, $response);
+                }
+            }
+        }
+
+        // Fetch current zone records
+        $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+        $records = [];
+        if ($zone_response->status() == 'OK') {
+            $zone = $zone_response->response();
+            $raw_records = $zone->attributes['records'] ?? [];
+
+            // Flatten records into a single array for display
+            foreach ($raw_records as $type => $type_records) {
+                if (is_array($type_records)) {
+                    foreach ($type_records as $index => $record) {
+                        if (is_array($record)) {
+                            $record['record_type'] = strtoupper($type);
+                            $record['record_index'] = $index;
+                            $records[] = $record;
+                        }
+                    }
+                }
+            }
+        } else {
+            $this->Input->setErrors([]);
+        }
+
+        $this->view->set('records', $records);
+        $this->view->set('vars', $vars);
+        $this->view->set('record_types', [
+            'A' => 'A',
+            'AAAA' => 'AAAA',
+            'CNAME' => 'CNAME',
+            'MX' => 'MX',
+            'TXT' => 'TXT',
+            'SRV' => 'SRV',
+            'NS' => 'NS'
+        ]);
         $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
 
         return $this->view->fetch();
