@@ -73,6 +73,7 @@ $lang['Opensrs.tab_settings.field_submit'] = 'Update Settings';
 $lang['Opensrs.!error.user.valid'] = 'Please enter a user';
 $lang['Opensrs.!error.key.valid'] = 'Please enter a key';
 $lang['Opensrs.!error.key.valid_connection'] = 'The user and key combination appear to be invalid, or your Opensrs account may not be configured to allow API access.';
+$lang['Opensrs.!error.module_row.missing'] = 'The module row could not be found. Please reconfigure the module.';
 $lang['Opensrs.!error.registrant_type.format'] = 'Please select a registrant type';
 $lang['Opensrs.!error.registrant_vat_id.format'] = 'Please enter a VAT ID';
 $lang['Opensrs.!error.siren_siret.format'] = 'Please enter a SIREN/SIRET Number';
