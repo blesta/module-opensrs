@@ -83,6 +83,15 @@ $lang['Opensrs.tab_url_forwarding.redirect_frame'] = 'Frame (Masked)';
 $lang['Opensrs.tab_url_forwarding.field_add'] = 'Add Forwarding Rule';
 $lang['Opensrs.tab_url_forwarding.add_record'] = 'Add URL Forwarding Rule';
 $lang['Opensrs.tab_url_forwarding.no_records'] = 'There are no URL forwarding rules.';
+
+$lang['Opensrs.tab_dnssec.title'] = 'DNSSEC';
+$lang['Opensrs.tab_dnssec.field_key_tag'] = 'Key Tag';
+$lang['Opensrs.tab_dnssec.field_algorithm'] = 'Algorithm';
+$lang['Opensrs.tab_dnssec.field_digest_type'] = 'Digest Type';
+$lang['Opensrs.tab_dnssec.field_digest'] = 'Digest';
+$lang['Opensrs.tab_dnssec.field_add'] = 'Add DS Record';
+$lang['Opensrs.tab_dnssec.add_record'] = 'Add DS Record';
+$lang['Opensrs.tab_dnssec.no_records'] = 'There are no DNSSEC DS records.';
 $lang['Opensrs.tab_settings.field_registrar_lock'] = 'Registrar Lock';
 $lang['Opensrs.tab_settings.field_registrar_lock_yes'] = 'Set the registrar lock. Recommended to prevent unauthorized transfer.';
 $lang['Opensrs.tab_settings.field_registrar_lock_no'] = 'Release the registrar lock so the domain can be transferred.';

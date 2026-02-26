@@ -1,0 +1,95 @@
+
+    <div class="title_row first">
+        <h3><?php $this->_('Opensrs.tab_dnssec.title');?></h3>
+    </div>
+
+    <?php
+    if (!empty($ds_records)) {
+    ?>
+    <table class="table">
+        <tr class="heading_row">
+            <td><span><?php $this->_('Opensrs.tab_dnssec.field_key_tag');?></span></td>
+            <td><span><?php $this->_('Opensrs.tab_dnssec.field_algorithm');?></span></td>
+            <td><span><?php $this->_('Opensrs.tab_dnssec.field_digest_type');?></span></td>
+            <td><span><?php $this->_('Opensrs.tab_dnssec.field_digest');?></span></td>
+            <td class="last"><span><?php $this->_('Opensrs.tab_dns.field_options');?></span></td>
+        </tr>
+        <?php
+        foreach ($ds_records as $i => $record) {
+        ?>
+        <tr<?php echo ($i % 2 == 1) ? ' class="odd_row"' : '';?>>
+            <td><?php echo $this->Html->safe($record['key_tag'] ?? '');?></td>
+            <td><?php echo $this->Html->safe($record['algorithm'] ?? '');?></td>
+            <td><?php echo $this->Html->safe($record['digest_type'] ?? '');?></td>
+            <td><code><?php echo $this->Html->safe(substr($record['digest'] ?? '', 0, 32) . (strlen($record['digest'] ?? '') > 32 ? '...' : ''));?></code></td>
+            <td>
+                <?php
+                $this->Form->create();
+                $this->Form->fieldHidden('action', 'delete_ds_record');
+                $this->Form->fieldHidden('record_index', $record['record_index'] ?? '');
+                ?>
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i> <?php $this->_('Opensrs.tab_dns.field_delete');?>
+                </button>
+                <?php
+                $this->Form->end();
+                ?>
+            </td>
+        </tr>
+        <?php
+        }
+        ?>
+    </table>
+    <?php
+    } else {
+    ?>
+    <div class="empty_section">
+        <div class="empty_box"><?php $this->_('Opensrs.tab_dnssec.no_records');?></div>
+    </div>
+    <?php
+    }
+    ?>
+
+    <div class="title_row">
+        <h3><?php $this->_('Opensrs.tab_dnssec.add_record');?></h3>
+    </div>
+    <?php
+    $this->Form->create();
+    $this->Form->fieldHidden('action', 'add_ds_record');
+    ?>
+    <div class="pad">
+        <ul>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dnssec.field_key_tag', true), 'key_tag');
+                $this->Form->fieldText('key_tag', ($vars->key_tag ?? null), ['id' => 'key_tag']);
+                ?>
+            </li>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dnssec.field_algorithm', true), 'algorithm');
+                $this->Form->fieldSelect('algorithm', ($algorithms ?? []), ($vars->algorithm ?? '13'), ['id' => 'algorithm']);
+                ?>
+            </li>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dnssec.field_digest_type', true), 'digest_type');
+                $this->Form->fieldSelect('digest_type', ($digest_types ?? []), ($vars->digest_type ?? '2'), ['id' => 'digest_type']);
+                ?>
+            </li>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dnssec.field_digest', true), 'digest');
+                $this->Form->fieldText('digest', ($vars->digest ?? null), ['id' => 'digest']);
+                ?>
+            </li>
+        </ul>
+    </div>
+    <div class="button_row">
+        <?php
+        $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_dnssec.field_add', true), ['class' => 'btn btn-primary float-right']);
+        ?>
+    </div>
+    <?php
+    $this->Form->end();
+    ?>

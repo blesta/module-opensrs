@@ -1138,6 +1138,7 @@ class Opensrs extends RegistrarModule
         if ($this->featureServiceEnabled('dns_management', $service)) {
             $tabs['tabDns'] = Language::_('Opensrs.tab_dns.title', true);
             $tabs['tabUrlForwarding'] = Language::_('Opensrs.tab_url_forwarding.title', true);
+            $tabs['tabDnssec'] = Language::_('Opensrs.tab_dnssec.title', true);
         }
 
         return $tabs;
@@ -1183,6 +1184,10 @@ class Opensrs extends RegistrarModule
             $tabs['tabClientUrlForwarding'] = [
                 'name' => Language::_('Opensrs.tab_url_forwarding.title', true),
                 'icon' => 'fas fa-share'
+            ];
+            $tabs['tabClientDnssec'] = [
+                'name' => Language::_('Opensrs.tab_dnssec.title', true),
+                'icon' => 'fas fa-shield-alt'
             ];
         }
 
@@ -1342,6 +1347,36 @@ class Opensrs extends RegistrarModule
         array $files = null
     ) {
         return $this->manageUrlForwarding('tab_client_url_forwarding', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin DNSSEC tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabDnssec($package, $service, array $get = null, array $post = null, array $files = null)
+    {
+        return $this->manageDnssec('tab_dnssec', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Client DNSSEC tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabClientDnssec($package, $service, array $get = null, array $post = null, array $files = null)
+    {
+        return $this->manageDnssec('tab_client_dnssec', $package, $service, $get, $post, $files);
     }
 
     /**
@@ -1792,6 +1827,129 @@ class Opensrs extends RegistrarModule
             '301' => Language::_('Opensrs.tab_url_forwarding.redirect_301', true),
             '302' => Language::_('Opensrs.tab_url_forwarding.redirect_302', true),
             'frame' => Language::_('Opensrs.tab_url_forwarding.redirect_frame', true)
+        ]);
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
+    }
+
+    /**
+     * Handle DNSSEC management
+     *
+     * @param string $view The view to use
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    private function manageDnssec(
+        $view,
+        $package,
+        $service,
+        array $get = null,
+        array $post = null,
+        array $files = null
+    ) {
+        $this->view = new View($view, 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $vars = new stdClass();
+        $fields = $this->serviceFieldsToObject($service->fields);
+        $dnssec = new OpensrsDomainsDnssec($api);
+
+        if (!empty($post)) {
+            if (isset($post['action'])) {
+                if ($post['action'] == 'add_ds_record') {
+                    // Get existing records, add new one
+                    $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+                    $existing_records = [];
+                    if ($info_response->status() == 'OK') {
+                        $info = $info_response->response();
+                        $existing_records = $info->attributes['dnssec'] ?? [];
+                    }
+
+                    $new_record = [
+                        'key_tag' => $post['key_tag'] ?? '',
+                        'algorithm' => $post['algorithm'] ?? '',
+                        'digest_type' => $post['digest_type'] ?? '',
+                        'digest' => $post['digest'] ?? ''
+                    ];
+
+                    $existing_records[] = $new_record;
+
+                    $response = $dnssec->addDnssecRecord([
+                        'domain' => $fields->domain,
+                        'dnssec' => $existing_records
+                    ]);
+                    $this->processResponse($api, $response);
+                } elseif ($post['action'] == 'delete_ds_record') {
+                    // Get existing records, remove specified one
+                    $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+                    $existing_records = [];
+                    if ($info_response->status() == 'OK') {
+                        $info = $info_response->response();
+                        $existing_records = $info->attributes['dnssec'] ?? [];
+                    }
+
+                    $delete_index = (int)($post['record_index'] ?? -1);
+                    if (isset($existing_records[$delete_index])) {
+                        unset($existing_records[$delete_index]);
+                        $existing_records = array_values($existing_records);
+                    }
+
+                    $response = $dnssec->addDnssecRecord([
+                        'domain' => $fields->domain,
+                        'dnssec' => $existing_records
+                    ]);
+                    $this->processResponse($api, $response);
+                }
+            }
+        }
+
+        // Fetch current DS records
+        $ds_records = [];
+        $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+        if ($info_response->status() == 'OK') {
+            $info = $info_response->response();
+            $raw_records = $info->attributes['dnssec'] ?? [];
+            foreach ($raw_records as $index => $record) {
+                if (is_array($record)) {
+                    $record['record_index'] = $index;
+                    $ds_records[] = $record;
+                }
+            }
+        } else {
+            $this->Input->setErrors([]);
+        }
+
+        $this->view->set('ds_records', $ds_records);
+        $this->view->set('vars', $vars);
+        $this->view->set('algorithms', [
+            '3' => '3 - DSA/SHA-1',
+            '5' => '5 - RSA/SHA-1',
+            '6' => '6 - DSA-NSEC3-SHA1',
+            '7' => '7 - RSASHA1-NSEC3-SHA1',
+            '8' => '8 - RSA/SHA-256',
+            '10' => '10 - RSA/SHA-512',
+            '13' => '13 - ECDSA/SHA-256',
+            '14' => '14 - ECDSA/SHA-384',
+            '15' => '15 - Ed25519',
+            '16' => '16 - Ed448'
+        ]);
+        $this->view->set('digest_types', [
+            '1' => '1 - SHA-1',
+            '2' => '2 - SHA-256',
+            '4' => '4 - SHA-384'
         ]);
         $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
 

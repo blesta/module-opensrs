@@ -11,6 +11,8 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_transfer.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_forwarding.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_dnssec.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_ssl.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_users.php';
 
