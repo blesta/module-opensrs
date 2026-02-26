@@ -1137,6 +1137,7 @@ class Opensrs extends RegistrarModule
 
         if ($this->featureServiceEnabled('dns_management', $service)) {
             $tabs['tabDns'] = Language::_('Opensrs.tab_dns.title', true);
+            $tabs['tabUrlForwarding'] = Language::_('Opensrs.tab_url_forwarding.title', true);
         }
 
         return $tabs;
@@ -1178,6 +1179,10 @@ class Opensrs extends RegistrarModule
             $tabs['tabClientDns'] = [
                 'name' => Language::_('Opensrs.tab_dns.title', true),
                 'icon' => 'fas fa-globe'
+            ];
+            $tabs['tabClientUrlForwarding'] = [
+                'name' => Language::_('Opensrs.tab_url_forwarding.title', true),
+                'icon' => 'fas fa-share'
             ];
         }
 
@@ -1302,6 +1307,41 @@ class Opensrs extends RegistrarModule
     public function tabClientDns($package, $service, array $get = null, array $post = null, array $files = null)
     {
         return $this->manageDns('tab_client_dns', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin URL Forwarding tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabUrlForwarding($package, $service, array $get = null, array $post = null, array $files = null)
+    {
+        return $this->manageUrlForwarding('tab_url_forwarding', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Client URL Forwarding tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabClientUrlForwarding(
+        $package,
+        $service,
+        array $get = null,
+        array $post = null,
+        array $files = null
+    ) {
+        return $this->manageUrlForwarding('tab_client_url_forwarding', $package, $service, $get, $post, $files);
     }
 
     /**
@@ -1639,6 +1679,119 @@ class Opensrs extends RegistrarModule
             'TXT' => 'TXT',
             'SRV' => 'SRV',
             'NS' => 'NS'
+        ]);
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
+    }
+
+    /**
+     * Handle URL forwarding management
+     *
+     * @param string $view The view to use
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    private function manageUrlForwarding(
+        $view,
+        $package,
+        $service,
+        array $get = null,
+        array $post = null,
+        array $files = null
+    ) {
+        $this->view = new View($view, 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $vars = new stdClass();
+        $fields = $this->serviceFieldsToObject($service->fields);
+        $dns = new OpensrsDomainsDns($api);
+
+        if (!empty($post)) {
+            if (isset($post['action'])) {
+                if ($post['action'] == 'set_forwarding') {
+                    // Build URL forwarding record via DNS A/CNAME + URL forwarding
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        // Add forwarding record
+                        if (!isset($records['url_forwarding']) || !is_array($records['url_forwarding'])) {
+                            $records['url_forwarding'] = [];
+                        }
+                        $records['url_forwarding'][] = [
+                            'subdomain' => $post['subdomain'] ?? '@',
+                            'ip_address' => $post['destination'] ?? '',
+                            'type' => $post['redirect_type'] ?? '301'
+                        ];
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                } elseif ($post['action'] == 'delete_forwarding') {
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        $delete_index = (int)($post['record_index'] ?? -1);
+                        if (isset($records['url_forwarding'][$delete_index])) {
+                            unset($records['url_forwarding'][$delete_index]);
+                            $records['url_forwarding'] = array_values($records['url_forwarding']);
+                        }
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                }
+            }
+        }
+
+        // Fetch current forwarding records
+        $forwarding_records = [];
+        $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+        if ($zone_response->status() == 'OK') {
+            $zone = $zone_response->response();
+            $raw_records = $zone->attributes['records']['url_forwarding'] ?? [];
+            foreach ($raw_records as $index => $record) {
+                if (is_array($record)) {
+                    $record['record_index'] = $index;
+                    $forwarding_records[] = $record;
+                }
+            }
+        } else {
+            $this->Input->setErrors([]);
+        }
+
+        $this->view->set('forwarding_records', $forwarding_records);
+        $this->view->set('vars', $vars);
+        $this->view->set('redirect_types', [
+            '301' => Language::_('Opensrs.tab_url_forwarding.redirect_301', true),
+            '302' => Language::_('Opensrs.tab_url_forwarding.redirect_302', true),
+            'frame' => Language::_('Opensrs.tab_url_forwarding.redirect_frame', true)
         ]);
         $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
 

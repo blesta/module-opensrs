@@ -1,0 +1,85 @@
+
+    <div class="row panel-fix">
+        <div class="col-md-12">
+            <h4><?php $this->_('Opensrs.tab_url_forwarding.title');?></h4>
+
+            <?php
+            if (!empty($forwarding_records)) {
+            ?>
+            <div class="table-responsive">
+                <table class="table table-curved table-striped">
+                    <thead>
+                        <tr>
+                            <th><?php $this->_('Opensrs.tab_url_forwarding.field_subdomain');?></th>
+                            <th><?php $this->_('Opensrs.tab_url_forwarding.field_destination');?></th>
+                            <th><?php $this->_('Opensrs.tab_url_forwarding.field_redirect_type');?></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        foreach ($forwarding_records as $record) {
+                        ?>
+                        <tr>
+                            <td><?php echo $this->Html->safe($record['subdomain'] ?? '@');?></td>
+                            <td><?php echo $this->Html->safe($record['ip_address'] ?? '');?></td>
+                            <td><?php echo $this->Html->safe($record['type'] ?? '301');?></td>
+                            <td>
+                                <?php
+                                $this->Form->create();
+                                $this->Form->fieldHidden('action', 'delete_forwarding');
+                                $this->Form->fieldHidden('record_index', $record['record_index'] ?? '');
+                                ?>
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> <?php $this->_('Opensrs.tab_dns.field_delete');?>
+                                </button>
+                                <?php
+                                $this->Form->end();
+                                ?>
+                            </td>
+                        </tr>
+                        <?php
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php
+            } else {
+            ?>
+            <div class="alert alert-info"><?php $this->_('Opensrs.tab_url_forwarding.no_records');?></div>
+            <?php
+            }
+            ?>
+
+            <h4><?php $this->_('Opensrs.tab_url_forwarding.add_record');?></h4>
+            <?php
+            $this->Form->create();
+            $this->Form->fieldHidden('action', 'set_forwarding');
+            ?>
+            <div class="form-group">
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_url_forwarding.field_subdomain', true), 'subdomain');
+                $this->Form->fieldText('subdomain', ($vars->subdomain ?? '@'), ['id' => 'subdomain', 'class' => 'form-control']);
+                ?>
+            </div>
+            <div class="form-group">
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_url_forwarding.field_destination', true), 'destination');
+                $this->Form->fieldText('destination', ($vars->destination ?? null), ['id' => 'destination', 'class' => 'form-control', 'placeholder' => 'https://example.com']);
+                ?>
+            </div>
+            <div class="form-group">
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_url_forwarding.field_redirect_type', true), 'redirect_type');
+                $this->Form->fieldSelect('redirect_type', ($redirect_types ?? []), ($vars->redirect_type ?? '301'), ['id' => 'redirect_type', 'class' => 'form-control']);
+                ?>
+            </div>
+            <button class="btn btn-light float-right" type="submit">
+                <i class="fas fa-plus"></i> <?php $this->_('Opensrs.tab_url_forwarding.field_add');?>
+            </button>
+            <?php
+            $this->Form->end();
+            ?>
+        </div>
+    </div>
