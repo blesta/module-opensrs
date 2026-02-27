@@ -76,6 +76,20 @@ class OpensrsResponse
                 ?? $data->response_text
                 ?? 'Internal Server Error';
 
+            // Extract detailed per-domain error messages from attributes.details
+            $details = [];
+            if (isset($data->attributes['details']) && is_array($data->attributes['details'])) {
+                foreach ($data->attributes['details'] as $domain => $info) {
+                    if (is_array($info) && !empty($info['response_text'])) {
+                        $details[] = trim($info['response_text']);
+                    }
+                }
+            }
+
+            if (!empty($details)) {
+                $error_msg = implode('; ', $details);
+            }
+
             return (object)[
                 'response_text' => $error_msg,
                 'response_code' => $data->response_code ?? 500

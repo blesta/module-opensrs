@@ -211,7 +211,7 @@ class Opensrs extends RegistrarModule
      * @param array $vars An array of user supplied info to satisfy the request
      * @return bool True if the service validates, false otherwise. Sets Input errors when false.
      */
-    public function validateService($package, array $vars = null)
+    public function validateService($package, ?array $vars = null)
     {
         $this->Input->setRules($this->getServiceRules($vars));
 
@@ -225,7 +225,7 @@ class Opensrs extends RegistrarModule
      * @param array $vars An array of user-supplied info to satisfy the request
      * @return bool True if the service update validates or false otherwise. Sets Input errors when false.
      */
-    public function validateServiceEdit($service, array $vars = null)
+    public function validateServiceEdit($service, ?array $vars = null)
     {
         $this->Input->setRules($this->getServiceRules($vars, true));
 
@@ -239,7 +239,7 @@ class Opensrs extends RegistrarModule
      * @param bool $edit True to get the edit rules, false for the add rules
      * @return array Service rules
      */
-    private function getServiceRules(array $vars = null, $edit = false)
+    private function getServiceRules(?array $vars = null, $edit = false)
     {
         // Validate .fr TLD rules
         $fr_fields = Configure::get('Opensrs.domain_fields.fr');
@@ -323,7 +323,7 @@ class Opensrs extends RegistrarModule
      */
     public function addService(
         $package,
-        array $vars = null,
+        ?array $vars = null,
         $parent_package = null,
         $parent_service = null,
         $status = 'pending'
@@ -650,7 +650,7 @@ class Opensrs extends RegistrarModule
      * @param int $module_row_id The ID of the module row to fetch for the current module
      * @return bool True if the domain was successfully restored, false otherwise
      */
-    public function restoreDomain($domain, $module_row_id = null)
+    public function restoreDomain($domain, $module_row_id = null, array $vars = [])
     {
         $row = $this->getModuleRowOrFail($module_row_id);
         if (!$row) {
@@ -679,7 +679,7 @@ class Opensrs extends RegistrarModule
      * @see Module::getModule()
      * @see Module::getModuleRow()
      */
-    public function addPackage(array $vars = null)
+    public function addPackage(?array $vars = null)
     {
         $meta = [];
         if (isset($vars['meta']) && is_array($vars['meta'])) {
@@ -711,7 +711,7 @@ class Opensrs extends RegistrarModule
      * @see Module::getModule()
      * @see Module::getModuleRow()
      */
-    public function editPackage($package, array $vars = null)
+    public function editPackage($package, ?array $vars = null)
     {
         $meta = [];
         if (isset($vars['meta']) && is_array($vars['meta'])) {
@@ -1138,8 +1138,9 @@ class Opensrs extends RegistrarModule
         if ($this->featureServiceEnabled('dns_management', $service)) {
             $tabs['tabDns'] = Language::_('Opensrs.tab_dns.title', true);
             $tabs['tabUrlForwarding'] = Language::_('Opensrs.tab_url_forwarding.title', true);
-            $tabs['tabDnssec'] = Language::_('Opensrs.tab_dnssec.title', true);
         }
+
+        $tabs['tabDnssec'] = Language::_('Opensrs.tab_dnssec.title', true);
 
         return $tabs;
     }
@@ -1185,11 +1186,12 @@ class Opensrs extends RegistrarModule
                 'name' => Language::_('Opensrs.tab_url_forwarding.title', true),
                 'icon' => 'fas fa-share'
             ];
-            $tabs['tabClientDnssec'] = [
-                'name' => Language::_('Opensrs.tab_dnssec.title', true),
-                'icon' => 'fas fa-shield-alt'
-            ];
         }
+
+        $tabs['tabClientDnssec'] = [
+            'name' => Language::_('Opensrs.tab_dnssec.title', true),
+            'icon' => 'fas fa-shield-alt'
+        ];
 
         return $tabs;
     }
@@ -1204,7 +1206,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabWhois($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabWhois($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageWhois('tab_whois', $package, $service, $get, $post, $files);
     }
@@ -1219,7 +1221,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientWhois($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientWhois($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageWhois('tab_client_whois', $package, $service, $get, $post, $files);
     }
@@ -1234,7 +1236,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabNameservers($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabNameservers($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageNameservers('tab_nameservers', $package, $service, $get, $post, $files);
     }
@@ -1249,7 +1251,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientNameservers($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientNameservers($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageNameservers('tab_client_nameservers', $package, $service, $get, $post, $files);
     }
@@ -1264,7 +1266,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabSettings($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabSettings($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageSettings('tab_settings', $package, $service, $get, $post, $files);
     }
@@ -1279,7 +1281,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientSettings($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientSettings($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageSettings('tab_client_settings', $package, $service, $get, $post, $files);
     }
@@ -1294,7 +1296,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabDns($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabDns($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageDns('tab_dns', $package, $service, $get, $post, $files);
     }
@@ -1309,7 +1311,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientDns($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientDns($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageDns('tab_client_dns', $package, $service, $get, $post, $files);
     }
@@ -1324,7 +1326,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabUrlForwarding($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabUrlForwarding($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageUrlForwarding('tab_url_forwarding', $package, $service, $get, $post, $files);
     }
@@ -1342,9 +1344,9 @@ class Opensrs extends RegistrarModule
     public function tabClientUrlForwarding(
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         return $this->manageUrlForwarding('tab_client_url_forwarding', $package, $service, $get, $post, $files);
     }
@@ -1359,7 +1361,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabDnssec($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabDnssec($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageDnssec('tab_dnssec', $package, $service, $get, $post, $files);
     }
@@ -1374,7 +1376,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientDnssec($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientDnssec($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageDnssec('tab_client_dnssec', $package, $service, $get, $post, $files);
     }
@@ -1390,7 +1392,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    private function manageWhois($view, $package, $service, array $get = null, array $post = null, array $files = null)
+    private function manageWhois($view, $package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         $this->view = new View($view, 'default');
 
@@ -1465,9 +1467,9 @@ class Opensrs extends RegistrarModule
         $view,
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         $this->view = new View($view, 'default');
 
@@ -1515,9 +1517,9 @@ class Opensrs extends RegistrarModule
         $view,
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         $this->view = new View($view, 'default');
 
@@ -1597,9 +1599,9 @@ class Opensrs extends RegistrarModule
         $view,
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         $this->view = new View($view, 'default');
 
@@ -1735,9 +1737,9 @@ class Opensrs extends RegistrarModule
         $view,
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         $this->view = new View($view, 'default');
 
@@ -1848,9 +1850,9 @@ class Opensrs extends RegistrarModule
         $view,
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         $this->view = new View($view, 'default');
 
@@ -1872,6 +1874,7 @@ class Opensrs extends RegistrarModule
                 if ($post['action'] == 'add_ds_record') {
                     // Get existing records, add new one
                     $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+                    $this->logRequest($api, $info_response);
                     $existing_records = [];
                     if ($info_response->status() == 'OK') {
                         $info = $info_response->response();
@@ -1895,6 +1898,7 @@ class Opensrs extends RegistrarModule
                 } elseif ($post['action'] == 'delete_ds_record') {
                     // Get existing records, remove specified one
                     $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+                    $this->logRequest($api, $info_response);
                     $existing_records = [];
                     if ($info_response->status() == 'OK') {
                         $info = $info_response->response();
@@ -1919,6 +1923,7 @@ class Opensrs extends RegistrarModule
         // Fetch current DS records
         $ds_records = [];
         $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+        $this->logRequest($api, $info_response);
         if ($info_response->status() == 'OK') {
             $info = $info_response->response();
             $raw_records = $info->attributes['dnssec'] ?? [];
@@ -1928,8 +1933,6 @@ class Opensrs extends RegistrarModule
                     $ds_records[] = $record;
                 }
             }
-        } else {
-            $this->Input->setErrors([]);
         }
 
         $this->view->set('ds_records', $ds_records);
@@ -2098,7 +2101,7 @@ class Opensrs extends RegistrarModule
         $contact_set = [];
         foreach ($vars as $contact) {
             $contact['phone'] = $this->formatPhone($contact['phone'], $contact['country']);
-            $contact['postal_code'] = $contact['zip'] ?? '00000';
+            $contact['postal_code'] = $contact['postal_code'] ?? $contact['zip'] ?? '00000';
             $contact_set[$contact['external_id'] ?? 'owner'] = $contact;
         }
 

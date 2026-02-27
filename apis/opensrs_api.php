@@ -49,6 +49,11 @@ class OpensrsApi
     private $sandbox;
 
     /**
+     * @var mixed The logger instance
+     */
+    private $logger;
+
+    /**
      * @var array An array representing the last request made
      */
     private $last_request = ['url' => null, 'args' => null];

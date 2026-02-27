@@ -35,7 +35,7 @@ class OpensrsDomainsDnssec
     public function getDnssecRecords(array $vars) : OpensrsResponse
     {
         return $this->api->submit('get', array_merge($vars, [
-            'type' => 'domain_auth_info'
+            'type' => 'dnssec'
         ]));
     }
 
