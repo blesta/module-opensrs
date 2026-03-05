@@ -1,4 +1,5 @@
 <?php
+
 use Blesta\Core\Util\Common\Traits\Container;
 
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'opensrs_response.php';
@@ -75,7 +76,7 @@ class OpensrsApi
      * @param string $object The API object
      * @return OpensrsResponse The response object
      */
-    public function submit(string $command, array $args = [], string $object = 'domain') : OpensrsResponse
+    public function submit(string $command, array $args = [], string $object = 'domain'): OpensrsResponse
     {
         // Build XML document
         $xml_request = $this->buildXml($command, $args, $object);
@@ -136,7 +137,7 @@ class OpensrsApi
      * @param array $args The arguments to be sent to the executed command
      * @param string $object The API object
      */
-    private function buildXml(string $command, array $args = [], string $object = 'domain') : string
+    private function buildXml(string $command, array $args = [], string $object = 'domain'): string
     {
         // Build XML document
         $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="no"?><OPS_envelope/>');
@@ -176,7 +177,7 @@ class OpensrsApi
      * @param SimpleXMLElement $dt_assoc SimpleXMLElement object representing the API request
      * @param array $args A multi-dimensional array of arguments to append to the XML request
      */
-    private function buildRecursiveAttributes(SimpleXMLElement &$dt_assoc, array $args) : void
+    private function buildRecursiveAttributes(SimpleXMLElement &$dt_assoc, array $args): void
     {
         foreach ($args as $key => $value) {
             if (is_array($value)) {
@@ -199,7 +200,7 @@ class OpensrsApi
      *  - url The URL of the last request
      *  - args The parameters passed to the URL
      */
-    public function lastRequest() : array
+    public function lastRequest(): array
     {
         return $this->last_request;
     }

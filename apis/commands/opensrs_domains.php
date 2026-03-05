@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS Domain Management
  *
@@ -62,7 +63,7 @@ class OpensrsDomains
      *          All completed/cancelled requests are deleted from the database two weeks after they move to final state.
      * @return OpensrsResponse
      */
-    public function get(array $vars) : OpensrsResponse
+    public function get(array $vars): OpensrsResponse
     {
         return $this->api->submit('get', $vars);
     }
@@ -76,7 +77,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getDeletedDomains(array $vars) : OpensrsResponse
+    public function getDeletedDomains(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_deleted_domains', $vars);
     }
@@ -88,7 +89,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getDomainsByExpiredate(array $vars) : OpensrsResponse
+    public function getDomainsByExpiredate(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_domains_by_expiredate', $vars);
     }
@@ -101,7 +102,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getNotes(array $vars) : OpensrsResponse
+    public function getNotes(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_notes', $vars);
     }
@@ -114,7 +115,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getOrderInfo(array $vars) : OpensrsResponse
+    public function getOrderInfo(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_order_info', $vars);
     }
@@ -126,7 +127,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getOrdersByDomain(array $vars) : OpensrsResponse
+    public function getOrdersByDomain(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_orders_by_domain', $vars);
     }
@@ -138,7 +139,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getDomainsContacts(array $vars) : OpensrsResponse
+    public function getDomainsContacts(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_domains_contacts', $vars);
     }
@@ -150,7 +151,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getContract(array $vars) : OpensrsResponse
+    public function getContract(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_contract', $vars);
     }
@@ -165,7 +166,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getPrice(array $vars) : OpensrsResponse
+    public function getPrice(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_price', $vars);
     }
@@ -179,7 +180,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getRegistrantVerificationStatus(array $vars) : OpensrsResponse
+    public function getRegistrantVerificationStatus(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_registrant_verification_status', $vars);
     }
@@ -191,7 +192,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function lookup(array $vars) : OpensrsResponse
+    public function lookup(array $vars): OpensrsResponse
     {
         return $this->api->submit('lookup', $vars);
     }
@@ -206,7 +207,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function nameSuggest(array $vars) : OpensrsResponse
+    public function nameSuggest(array $vars): OpensrsResponse
     {
         return $this->api->submit('name_suggest', $vars);
     }
@@ -223,7 +224,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function ukGetBlockerContact(array $vars) : OpensrsResponse
+    public function ukGetBlockerContact(array $vars): OpensrsResponse
     {
         return $this->api->submit('uk_get_blocker_contact', $vars);
     }
@@ -236,7 +237,7 @@ class OpensrsDomains
      *  -
      * @return OpensrsResponse The response object
      */
-    public function sendAuthcode(array $vars) : OpensrsResponse
+    public function sendAuthcode(array $vars): OpensrsResponse
     {
         return $this->api->submit('send_authcode', $vars);
     }

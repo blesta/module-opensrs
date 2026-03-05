@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS Nameserver Management
  *
@@ -30,7 +31,7 @@ class OpensrsDomainsNs
      *  -
      * @return OpensrsResponse The response object
      */
-    public function get(array $vars) : OpensrsResponse
+    public function get(array $vars): OpensrsResponse
     {
         return $this->api->submit('get', $vars, 'nameserver');
     }
@@ -42,7 +43,7 @@ class OpensrsDomainsNs
      *  -
      * @return OpensrsResponse The response object
      */
-    public function delete(array $vars) : OpensrsResponse
+    public function delete(array $vars): OpensrsResponse
     {
         return $this->api->submit('delete', $vars, 'nameserver');
     }
@@ -54,7 +55,7 @@ class OpensrsDomainsNs
      *  -
      * @return OpensrsResponse The response object
      */
-    public function modify(array $vars) : OpensrsResponse
+    public function modify(array $vars): OpensrsResponse
     {
         return $this->api->submit('modify', $vars, 'nameserver');
     }
@@ -66,7 +67,7 @@ class OpensrsDomainsNs
      *  -
      * @return OpensrsResponse The response object
      */
-    public function registryAddNs(array $vars) : OpensrsResponse
+    public function registryAddNs(array $vars): OpensrsResponse
     {
         return $this->api->submit('registry_add_ns', $vars, 'nameserver');
     }
@@ -78,7 +79,7 @@ class OpensrsDomainsNs
      *  -
      * @return OpensrsResponse The response object
      */
-    public function registryCheckNameserver(array $vars) : OpensrsResponse
+    public function registryCheckNameserver(array $vars): OpensrsResponse
     {
         return $this->api->submit('registry_check_nameserver', $vars, 'nameserver');
     }
@@ -90,7 +91,7 @@ class OpensrsDomainsNs
      *  -
      * @return OpensrsResponse The response object
      */
-    public function advancedUpdateNameserver(array $vars) : OpensrsResponse
+    public function advancedUpdateNameserver(array $vars): OpensrsResponse
     {
         return $this->api->submit('advanced_update_nameservers', $vars);
     }

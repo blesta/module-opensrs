@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS Provisioning Management
  *
@@ -30,7 +31,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function swRegister(array $vars) : OpensrsResponse
+    public function swRegister(array $vars): OpensrsResponse
     {
         return $this->api->submit('sw_register', $vars);
     }
@@ -42,7 +43,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function activate(array $vars) : OpensrsResponse
+    public function activate(array $vars): OpensrsResponse
     {
         return $this->api->submit('activate', $vars);
     }
@@ -54,7 +55,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function modify(array $vars) : OpensrsResponse
+    public function modify(array $vars): OpensrsResponse
     {
         return $this->api->submit('modify', $vars);
     }
@@ -66,7 +67,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function processPending(array $vars) : OpensrsResponse
+    public function processPending(array $vars): OpensrsResponse
     {
         return $this->api->submit('process_pending', $vars);
     }
@@ -78,7 +79,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function queryQueuedRequest(array $vars) : OpensrsResponse
+    public function queryQueuedRequest(array $vars): OpensrsResponse
     {
         return $this->api->submit('query_queued_request', $vars);
     }
@@ -91,7 +92,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function redeem(array $vars) : OpensrsResponse
+    public function redeem(array $vars): OpensrsResponse
     {
         return $this->api->submit('redeem', $vars);
     }
@@ -103,7 +104,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function renew(array $vars) : OpensrsResponse
+    public function renew(array $vars): OpensrsResponse
     {
         return $this->api->submit('renew', $vars);
     }
@@ -115,7 +116,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function revoke(array $vars) : OpensrsResponse
+    public function revoke(array $vars): OpensrsResponse
     {
         return $this->api->submit('revoke', $vars);
     }
@@ -127,7 +128,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function sendRegistrantVerificationEmail(array $vars) : OpensrsResponse
+    public function sendRegistrantVerificationEmail(array $vars): OpensrsResponse
     {
         return $this->api->submit('send_registrant_verification_email', $vars);
     }
@@ -139,7 +140,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function setDomainAffiliateId(array $vars) : OpensrsResponse
+    public function setDomainAffiliateId(array $vars): OpensrsResponse
     {
         return $this->api->submit('set_domain_affiliate_id', $vars);
     }
@@ -151,7 +152,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function updateAllInfo(array $vars) : OpensrsResponse
+    public function updateAllInfo(array $vars): OpensrsResponse
     {
         return $this->api->submit('update_all_info', $vars);
     }
@@ -163,7 +164,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function updateContacts(array $vars) : OpensrsResponse
+    public function updateContacts(array $vars): OpensrsResponse
     {
         return $this->api->submit('update_contacts', $vars);
     }
@@ -175,7 +176,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function modifyMessagingLanguage(array $vars) : OpensrsResponse
+    public function modifyMessagingLanguage(array $vars): OpensrsResponse
     {
         return $this->api->submit('modify_messaging_language', $vars);
     }
@@ -187,7 +188,7 @@ class OpensrsDomainsProvisioning
      *  -
      * @return OpensrsResponse The response object
      */
-    public function cancelPendingOrders(array $vars) : OpensrsResponse
+    public function cancelPendingOrders(array $vars): OpensrsResponse
     {
         return $this->api->submit('cancel_pending_orders', $vars, 'order');
     }

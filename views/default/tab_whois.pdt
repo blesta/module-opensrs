@@ -1,25 +1,28 @@
+<?php /** @var View $this **/ ?>
 
-    <?php
+<?php
     $this->Form->create();
     ?>
 
-    <?php
+<?php
+
     $i = 0;
     foreach ($sections as $key) {
     ?>
-    <div class="title_row<?php echo ($i == 0 ? ' first' : '');?>">
-        <h3><?php $this->_('Opensrs.tab_whois.section_' . $key);?></h3>
-    </div>
-    <div class="pad">
-        <ul>
-            <?php
+<div class="title_row<?php echo ($i == 0 ? ' first' : '');?>">
+    <h6 class="form-section-header"><?php $this->_('Opensrs.tab_whois.section_' . $key);?></h6>
+</div>
+<div>
+    <?php
+
             foreach ($fields as $field) {
                 if (!str_contains($field->params['for'], $key)) {
                     continue;
                 }
             ?>
-            <li>
-                <?php
+    <div class="mb-3">
+    <?php
+
                 // Draw the primary label/field
                 call_user_func_array([$this->Form, $field->type], $field->params);
 
@@ -51,29 +54,29 @@
                 }
 
                 foreach ($tooltips as $tooltip) {
-                ?>
-                <span class="tooltip">
-                    <?php $this->_('AppController.tooltip.text');?>
-                    <div><?php echo (isset($tooltip->params['message']) ? $this->Html->safe($tooltip->params['message']) : null);?></div>
-                </span>
-                <?php
+                    ?>
+            <span class="tooltip">
+                <?php $this->_('AppController.tooltip.text');?>
+                <div><?php echo (isset($tooltip->params['message']) ? $this->Html->safe($tooltip->params['message']) : null);?></div>
+            </span>
+                    <?php
                 }
                 ?>
-            </li>
-            <?php
+    </div>
+                    <?php
             }
             ?>
-        </ul>
-    </div>
+</div>
     <?php
         $i++;
     }
     ?>
-    <div class="button_row">
-        <?php
-        $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_whois.field_submit', true), ['class' => 'btn btn-primary float-right']);
+<div class="d-flex justify-content-end">
+    <?php
+
+        $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_whois.field_submit', true), ['class' => 'btn btn-primary']);
         ?>
-    </div>
+</div>
     <?php
     $this->Form->end();
     ?>

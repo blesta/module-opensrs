@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS SSL Management
  *
@@ -31,7 +32,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function swRegister(array $vars) : OpensrsResponse
+    public function swRegister(array $vars): OpensrsResponse
     {
         return $this->api->submit('sw_register', $vars, 'trust_service');
     }
@@ -43,7 +44,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function cancelFreeTrial(array $vars) : OpensrsResponse
+    public function cancelFreeTrial(array $vars): OpensrsResponse
     {
         return $this->api->submit('cancel_free_trial', $vars, 'trust_service');
     }
@@ -55,7 +56,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function cancelOrder(array $vars) : OpensrsResponse
+    public function cancelOrder(array $vars): OpensrsResponse
     {
         return $this->api->submit('cancel_order', $vars, 'trust_service');
     }
@@ -68,7 +69,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function createToken(array $vars) : OpensrsResponse
+    public function createToken(array $vars): OpensrsResponse
     {
         return $this->api->submit('create_token', $vars, 'trust_service');
     }
@@ -81,7 +82,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getCert(array $vars) : OpensrsResponse
+    public function getCert(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_cert', $vars, 'trust_service');
     }
@@ -93,7 +94,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getProductInfo(array $vars) : OpensrsResponse
+    public function getProductInfo(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_product_info', $vars, 'trust_service');
     }
@@ -105,7 +106,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getProducts(array $vars) : OpensrsResponse
+    public function getProducts(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_products', $vars, 'trust_service');
     }
@@ -117,7 +118,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function parseCsr(array $vars) : OpensrsResponse
+    public function parseCsr(array $vars): OpensrsResponse
     {
         return $this->api->submit('parse_csr', $vars, 'trust_service');
     }
@@ -129,7 +130,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function queryApproverList(array $vars) : OpensrsResponse
+    public function queryApproverList(array $vars): OpensrsResponse
     {
         return $this->api->submit('query_approver_list', $vars, 'trust_service');
     }
@@ -143,7 +144,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function requestOnDemandScan(array $vars) : OpensrsResponse
+    public function requestOnDemandScan(array $vars): OpensrsResponse
     {
         return $this->api->submit('request_on_demand_scan', $vars, 'trust_service');
     }
@@ -155,7 +156,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function resendCertEmail(array $vars) : OpensrsResponse
+    public function resendCertEmail(array $vars): OpensrsResponse
     {
         return $this->api->submit('resend_cert_email', $vars, 'trust_service');
     }
@@ -167,7 +168,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function resendApproveEmail(array $vars) : OpensrsResponse
+    public function resendApproveEmail(array $vars): OpensrsResponse
     {
         return $this->api->submit('resend_approve_email', $vars, 'trust_service');
     }
@@ -182,7 +183,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function updateOrder(array $vars) : OpensrsResponse
+    public function updateOrder(array $vars): OpensrsResponse
     {
         return $this->api->submit('update_order', $vars, 'trust_service');
     }
@@ -195,7 +196,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function updateProduct(array $vars) : OpensrsResponse
+    public function updateProduct(array $vars): OpensrsResponse
     {
         return $this->api->submit('update_product', $vars, 'trust_service');
     }
@@ -208,7 +209,7 @@ class OpensrsSsl
      *  -
      * @return OpensrsResponse The response object
      */
-    public function updateDvAuth(array $vars) : OpensrsResponse
+    public function updateDvAuth(array $vars): OpensrsResponse
     {
         return $this->api->submit('update_dv_auth', $vars, 'trust_service');
     }

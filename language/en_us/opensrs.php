@@ -5,6 +5,7 @@ $lang['Opensrs.description'] = 'OpenSRS is a wholesale domain registrar that off
 $lang['Opensrs.module_row'] = 'Account';
 $lang['Opensrs.module_row_plural'] = 'Accounts';
 
+$lang['Opensrs.back_to_manage'] = 'Back';
 
 // Module management
 $lang['Opensrs.add_module_row'] = 'Add Account';
