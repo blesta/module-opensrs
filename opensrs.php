@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS Module
  *
@@ -74,11 +75,7 @@ class Opensrs extends RegistrarModule
             Configure::get('Blesta.company_id') . DS . 'modules' . DS . 'opensrs' . DS
         );
 
-        if ($cache) {
-            $pricing = unserialize(base64_decode($cache));
-        } else {
-            $pricing = [];
-        }
+        $pricing = $cache ? unserialize(base64_decode($cache)) : [];
 
 
         // Fetch pricing from the registrar
@@ -141,7 +138,7 @@ class Opensrs extends RegistrarModule
                     strtotime(Configure::get('Blesta.cache_length')) - time(),
                     Configure::get('Blesta.company_id') . DS . 'modules' . DS . 'opensrs' . DS
                 );
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 // Write to cache failed, so disable caching
                 Configure::set('Caching.on', false);
             }
@@ -340,21 +337,17 @@ class Opensrs extends RegistrarModule
         }
 
         $whois_fields = Configure::get('Opensrs.whois_fields');
-        if (array_key_exists('auth_info', $vars)) {
-            $input_fields = array_merge(
-                Configure::get('Opensrs.transfer_fields'),
-                Configure::get('Opensrs.nameserver_fields'),
-                $whois_fields,
-                (array)Configure::get('Opensrs.domain_fields' . $tld)
-            );
-        } else {
-            $input_fields = array_merge(
-                Configure::get('Opensrs.domain_fields'),
-                Configure::get('Opensrs.nameserver_fields'),
-                $whois_fields,
-                (array)Configure::get('Opensrs.domain_fields' . $tld)
-            );
-        }
+        $input_fields = array_key_exists('auth_info', $vars) ? array_merge(
+            Configure::get('Opensrs.transfer_fields'),
+            Configure::get('Opensrs.nameserver_fields'),
+            $whois_fields,
+            (array)Configure::get('Opensrs.domain_fields' . $tld)
+        ) : array_merge(
+            Configure::get('Opensrs.domain_fields'),
+            Configure::get('Opensrs.nameserver_fields'),
+            $whois_fields,
+            (array)Configure::get('Opensrs.domain_fields' . $tld)
+        );
 
         // Set all whois info from client
         if (!isset($this->Clients)) {
@@ -398,11 +391,7 @@ class Opensrs extends RegistrarModule
             }
 
             if (empty($vars[$key])) {
-                if (str_contains($key, 'postal_code')) {
-                    $vars[$key] = '33064';
-                } else {
-                    $vars[$key] = 'NA';
-                }
+                $vars[$key] = str_contains($key, 'postal_code') ? '33064' : 'NA';
             }
         }
 
@@ -616,6 +605,14 @@ class Opensrs extends RegistrarModule
                 $vars['sandbox'] = 'false';
             }
         }
+        // Fetch module
+        Loader::loadModels($this, ['ModuleManager']);
+        $module = $this->ModuleManager->getByClass(
+            \Illuminate\Support\Str::snake(get_class($this)),
+            Configure::get('Blesta.company_id')
+        );
+        $module = ($module[0] ?? []);
+        $this->view->set('module', (object) $module);
         $this->view->set('vars', (object)$vars);
 
         return $this->view->fetch();
@@ -647,6 +644,14 @@ class Opensrs extends RegistrarModule
                 $vars['sandbox'] = 'false';
             }
         }
+        // Fetch module
+        Loader::loadModels($this, ['ModuleManager']);
+        $module = $this->ModuleManager->getByClass(
+            \Illuminate\Support\Str::snake(get_class($this)),
+            Configure::get('Blesta.company_id')
+        );
+        $module = ($module[0] ?? []);
+        $this->view->set('module', (object) $module);
         $this->view->set('vars', (object)$vars);
 
         return $this->view->fetch();
@@ -883,19 +888,15 @@ class Opensrs extends RegistrarModule
             $extension_fields = Configure::get('Opensrs.domain_fields' . $tld);
             if ($extension_fields) {
                 // Set the fields
-                if ($client) {
-                    $fields = array_merge(
-                        Configure::get('Opensrs.nameserver_fields'),
-                        Configure::get('Opensrs.domain_fields'),
-                        $extension_fields
-                    );
-                } else {
-                    $fields = array_merge(
-                        Configure::get('Opensrs.domain_fields'),
-                        Configure::get('Opensrs.nameserver_fields'),
-                        $extension_fields
-                    );
-                }
+                $fields = $client ? array_merge(
+                    Configure::get('Opensrs.nameserver_fields'),
+                    Configure::get('Opensrs.domain_fields'),
+                    $extension_fields
+                ) : array_merge(
+                    Configure::get('Opensrs.domain_fields'),
+                    Configure::get('Opensrs.nameserver_fields'),
+                    $extension_fields
+                );
 
                 if ($client) {
                     // We should already have the domain name don't make editable
@@ -913,7 +914,7 @@ class Opensrs extends RegistrarModule
 
                 foreach ($fields as $key => $field) {
                     // Build the field
-                    $label = $module_fields->label((isset($field['label']) ? $field['label'] : ''), $key);
+                    $label = $module_fields->label(($field['label'] ?? ''), $key);
 
                     $type = null;
                     if ($field['type'] == 'text') {
@@ -1889,7 +1890,7 @@ class Opensrs extends RegistrarModule
 
         // Set errors, if any
         if ($response->status() != 'OK') {
-            $errors = isset($response->errors()->response_text) ? $response->errors()->response_text : '';
+            $errors = $response->errors()->response_text ?? '';
             $this->Input->setErrors(['errors' => [$errors]]);
         }
     }

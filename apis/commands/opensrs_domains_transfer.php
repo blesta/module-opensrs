@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS Domain Transfer Management
  *
@@ -29,7 +30,7 @@ class OpensrsDomainsTransfer
      *  -
      * @return OpensrsResponse The response object
      */
-    public function cancelTransfer(array $vars) : OpensrsResponse
+    public function cancelTransfer(array $vars): OpensrsResponse
     {
         return $this->api->submit('cancel_transfer', $vars, 'transfer');
     }
@@ -41,7 +42,7 @@ class OpensrsDomainsTransfer
      *  -
      * @return OpensrsResponse The response object
      */
-    public function processTransfer(array $vars) : OpensrsResponse
+    public function processTransfer(array $vars): OpensrsResponse
     {
         return $this->api->submit('process_transfer', $vars, 'transfer');
     }
@@ -53,7 +54,7 @@ class OpensrsDomainsTransfer
      *  -
      * @return OpensrsResponse The response object
      */
-    public function sendPassword(array $vars) : OpensrsResponse
+    public function sendPassword(array $vars): OpensrsResponse
     {
         return $this->api->submit('send_password', $vars, 'transfer');
     }
@@ -66,7 +67,7 @@ class OpensrsDomainsTransfer
      *  -
      * @return OpensrsResponse The response object
      */
-    public function checkTransfer(array $vars) : OpensrsResponse
+    public function checkTransfer(array $vars): OpensrsResponse
     {
         return $this->api->submit('check_transfer', $vars);
     }
@@ -78,7 +79,7 @@ class OpensrsDomainsTransfer
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getTransfersAway(array $vars) : OpensrsResponse
+    public function getTransfersAway(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_transfers_away', $vars);
     }
@@ -90,7 +91,7 @@ class OpensrsDomainsTransfer
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getTransfersIn(array $vars) : OpensrsResponse
+    public function getTransfersIn(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_transfers_in', $vars);
     }
@@ -102,7 +103,7 @@ class OpensrsDomainsTransfer
      *  -
      * @return OpensrsResponse The response object
      */
-    public function tradeDomain(array $vars) : OpensrsResponse
+    public function tradeDomain(array $vars): OpensrsResponse
     {
         return $this->api->submit('trade_domain', $vars);
     }
