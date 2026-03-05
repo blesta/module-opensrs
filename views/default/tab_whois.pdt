@@ -9,9 +9,7 @@
     $i = 0;
     foreach ($sections as $key) {
     ?>
-<div class="title_row<?php echo ($i == 0 ? ' first' : '');?>">
-    <h6 class="form-section-header"><?php $this->_('Opensrs.tab_whois.section_' . $key);?></h6>
-</div>
+<h6 class="form-section-header<?php echo ($i == 0 ? ' first' : '');?>>"><?php $this->_('Opensrs.tab_whois.section_' . $key);?></h6>
 <div>
     <?php
 
