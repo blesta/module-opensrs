@@ -1,29 +1,22 @@
 <?php /** @var View $this **/ ?>
 
-<?php
-    $this->Form->create();
-    ?>
+<?php $this->Form->create(); ?>
 <div>
-    <?php
-
-            for ($i = 0; $i < 5; $i++) {
-                ?>
+    <?php for ($i = 0; $i < 5; $i++) { ?>
     <div class="mb-3">
         <?php
-                    $this->Form->label($this->_('Opensrs.tab_nameserver.field_ns', true, $i + 1), 'ns' . ($i + 1), ['class' => 'form-label']);
-                    $this->Form->fieldText('ns[]', ($vars->ns[$i] ?? null), ['id' => 'ns' . ($i + 1), 'class' => 'form-control']);
-                    ?>
+        $this->Form->label($this->_('Opensrs.tab_nameserver.field_ns', true, $i + 1), 'ns' . ($i + 1), [
+            'class' => 'form-label',
+        ]);
+        $this->Form->fieldText('ns[]', $vars->ns[$i] ?? null, ['id' => 'ns' . ($i + 1), 'class' => 'form-control']);
+        ?>
     </div>
-    <?php
-            }
-            ?>
+    <?php } ?>
 </div>
 <div class="d-flex justify-content-end">
-    <?php
-
-        $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_nameservers.field_submit', true), ['class' => 'btn btn-primary']);
-        ?>
+    <?php $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_nameservers.field_submit', true), [
+        'class' => 'btn btn-primary',
+    ]); ?>
 </div>
-<?php
-    $this->Form->end();
-    ?>
+<?php $this->Form->end();
+?>

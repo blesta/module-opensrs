@@ -1,75 +1,89 @@
 <?php /** @var View $this **/ ?>
 
-<?php
-    $this->Form->create();
-    ?>
+<?php $this->Form->create(); ?>
 <div>
     <div class="mb-3">
-    <?php
-
-                $this->Form->label($this->_('Opensrs.tab_settings.field_registrar_lock', true), 'registrar_lock', ['class' => 'form-label']);
-                ?>
+    <?php $this->Form->label($this->_('Opensrs.tab_settings.field_registrar_lock', true), 'registrar_lock', [
+        'class' => 'form-label',
+    ]); ?>
         <div class="form-check">
             <?php
-                    $this->Form->fieldRadio('registrar_lock', 'true', ($vars->registrar_lock ?? null) == 'true', ['id' => 'registrar_lock_yes', 'class' => 'form-check-input']);
-                    $this->Form->label($this->_('Opensrs.tab_settings.field_registrar_lock_yes', true), 'registrar_lock_yes', ['class' => 'form-check-label']);
-                    ?>
+            $this->Form->fieldRadio('registrar_lock', 'true', ($vars->registrar_lock ?? null) == 'true', [
+                'id' => 'registrar_lock_yes',
+                'class' => 'form-check-input',
+            ]);
+            $this->Form->label($this->_('Opensrs.tab_settings.field_registrar_lock_yes', true), 'registrar_lock_yes', [
+                'class' => 'form-check-label',
+            ]);
+            ?>
         </div>
         <div class="form-check">
             <?php
-                    $this->Form->fieldRadio('registrar_lock', 'false', ($vars->registrar_lock ?? null) == 'false', ['id' => 'registrar_lock_no', 'class' => 'form-check-input']);
-                    $this->Form->label($this->_('Opensrs.tab_settings.field_registrar_lock_no', true), 'registrar_lock_no', ['class' => 'form-check-label']);
-                    ?>
+            $this->Form->fieldRadio('registrar_lock', 'false', ($vars->registrar_lock ?? null) == 'false', [
+                'id' => 'registrar_lock_no',
+                'class' => 'form-check-input',
+            ]);
+            $this->Form->label($this->_('Opensrs.tab_settings.field_registrar_lock_no', true), 'registrar_lock_no', [
+                'class' => 'form-check-label',
+            ]);
+            ?>
         </div>
     </div>
 
-    <?php
-            if ($id_protection ?? false) {
-            ?>
+    <?php if ($id_protection ?? false) { ?>
     <div class="mb-3">
-    <?php
-
-                $this->Form->label($this->_('Opensrs.tab_settings.field_whois_privacy', true), 'whois_privacy_state', ['class' => 'form-label']);
-                ?>
+    <?php $this->Form->label($this->_('Opensrs.tab_settings.field_whois_privacy', true), 'whois_privacy_state', [
+        'class' => 'form-label',
+    ]); ?>
         <div class="form-check">
             <?php
-                    $this->Form->fieldRadio('whois_privacy_state', 'true', ($vars->whois_privacy_state ?? null) == 'true', ['id' => 'whois_privacy_state_yes', 'class' => 'form-check-input']);
-                    $this->Form->label($this->_('Opensrs.tab_settings.field_whois_privacy_state_yes', true), 'whois_privacy_state_yes', ['class' => 'form-check-label']);
-                    ?>
+            $this->Form->fieldRadio('whois_privacy_state', 'true', ($vars->whois_privacy_state ?? null) == 'true', [
+                'id' => 'whois_privacy_state_yes',
+                'class' => 'form-check-input',
+            ]);
+            $this->Form->label(
+                $this->_('Opensrs.tab_settings.field_whois_privacy_state_yes', true),
+                'whois_privacy_state_yes',
+                ['class' => 'form-check-label'],
+            );
+            ?>
         </div>
         <div class="form-check">
             <?php
-                    $this->Form->fieldRadio('whois_privacy_state', 'false', ($vars->whois_privacy_state ?? null) == 'false', ['id' => 'whois_privacy_state_no', 'class' => 'form-check-input']);
-                    $this->Form->label($this->_('Opensrs.tab_settings.field_whois_privacy_state_no', true), 'whois_privacy_state_no', ['class' => 'form-check-label']);
-                    ?>
+            $this->Form->fieldRadio('whois_privacy_state', 'false', ($vars->whois_privacy_state ?? null) == 'false', [
+                'id' => 'whois_privacy_state_no',
+                'class' => 'form-check-input',
+            ]);
+            $this->Form->label(
+                $this->_('Opensrs.tab_settings.field_whois_privacy_state_no', true),
+                'whois_privacy_state_no',
+                ['class' => 'form-check-label'],
+            );
+            ?>
         </div>
     </div>
-    <?php
-            }
-            ?>
+    <?php } ?>
 
-    <?php
-
-            if ($epp_code ?? false) {
-            ?>
+    <?php if ($epp_code ?? false) { ?>
     <div class="mb-3">
         <div class="form-check">
             <?php
-                    $this->Form->fieldCheckbox('request_epp', 'true', ($vars->request_epp ?? null) == 'true', ['id' => 'request_epp', 'class' => 'form-check-input']);
-                    $this->Form->label($this->_('Opensrs.tab_settings.field_request_epp', true), 'request_epp', ['class' => 'form-check-label']);
-                    ?>
+            $this->Form->fieldCheckbox('request_epp', 'true', ($vars->request_epp ?? null) == 'true', [
+                'id' => 'request_epp',
+                'class' => 'form-check-input',
+            ]);
+            $this->Form->label($this->_('Opensrs.tab_settings.field_request_epp', true), 'request_epp', [
+                'class' => 'form-check-label',
+            ]);
+            ?>
         </div>
     </div>
-    <?php
-            }
-            ?>
+    <?php } ?>
 </div>
 <div class="d-flex justify-content-end">
-    <?php
-
-        $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_settings.field_submit', true), ['class' => 'btn btn-primary']);
-        ?>
+    <?php $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_settings.field_submit', true), [
+        'class' => 'btn btn-primary',
+    ]); ?>
 </div>
-<?php
-    $this->Form->end();
-    ?>
+<?php $this->Form->end();
+?>
