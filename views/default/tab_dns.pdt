@@ -1,0 +1,117 @@
+
+    <div class="title_row first">
+        <h3><?php $this->_('Opensrs.tab_dns.title');?></h3>
+    </div>
+
+    <?php
+    if (!empty($records)) {
+    ?>
+    <table class="table">
+        <tr class="heading_row">
+            <td><span><?php $this->_('Opensrs.tab_dns.field_type');?></span></td>
+            <td><span><?php $this->_('Opensrs.tab_dns.field_subdomain');?></span></td>
+            <td><span><?php $this->_('Opensrs.tab_dns.field_ip_address');?></span></td>
+            <td><span><?php $this->_('Opensrs.tab_dns.field_priority');?></span></td>
+            <td><span><?php $this->_('Opensrs.tab_dns.field_ttl');?></span></td>
+            <td class="last"><span><?php $this->_('Opensrs.tab_dns.field_options');?></span></td>
+        </tr>
+        <?php
+        foreach ($records as $i => $record) {
+        ?>
+        <tr<?php echo ($i % 2 == 1) ? ' class="odd_row"' : '';?>>
+            <td><?php echo $this->Html->safe($record['record_type'] ?? '');?></td>
+            <td><?php echo $this->Html->safe($record['subdomain'] ?? '');?></td>
+            <td><?php echo $this->Html->safe($record['ip_address'] ?? '');?></td>
+            <td><?php echo $this->Html->safe($record['priority'] ?? '');?></td>
+            <td><?php echo $this->Html->safe($record['ttl'] ?? '');?></td>
+            <td>
+                <?php
+                $this->Form->create();
+                $this->Form->fieldHidden('action', 'delete_record');
+                $this->Form->fieldHidden('record_type', strtolower($record['record_type'] ?? ''));
+                $this->Form->fieldHidden('record_index', $record['record_index'] ?? '');
+                ?>
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i> <?php $this->_('Opensrs.tab_dns.field_delete');?>
+                </button>
+                <?php
+                $this->Form->end();
+                ?>
+            </td>
+        </tr>
+        <?php
+        }
+        ?>
+    </table>
+    <?php
+    } else {
+    ?>
+    <div class="empty_section">
+        <div class="empty_box"><?php $this->_('Opensrs.tab_dns.no_records');?></div>
+    </div>
+    <?php
+    }
+    ?>
+
+    <div class="title_row">
+        <h3><?php $this->_('Opensrs.tab_dns.add_record');?></h3>
+    </div>
+    <?php
+    $this->Form->create();
+    $this->Form->fieldHidden('action', 'add_record');
+    ?>
+    <div class="pad">
+        <ul>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dns.field_type', true), 'type');
+                $this->Form->fieldSelect('type', ($record_types ?? []), ($vars->type ?? 'A'), ['id' => 'type']);
+                ?>
+            </li>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dns.field_subdomain', true), 'subdomain');
+                $this->Form->fieldText('subdomain', ($vars->subdomain ?? null), ['id' => 'subdomain']);
+                ?>
+            </li>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dns.field_ip_address', true), 'ip_address');
+                $this->Form->fieldText('ip_address', ($vars->ip_address ?? null), ['id' => 'ip_address']);
+                ?>
+            </li>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dns.field_priority', true), 'priority');
+                $this->Form->fieldText('priority', ($vars->priority ?? null), ['id' => 'priority']);
+                ?>
+            </li>
+            <li>
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_dns.field_ttl', true), 'ttl');
+                $this->Form->fieldText('ttl', ($vars->ttl ?? '3600'), ['id' => 'ttl']);
+                ?>
+            </li>
+        </ul>
+    </div>
+    <div class="button_row">
+        <?php
+        $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_dns.field_add', true), ['class' => 'btn btn-primary float-right']);
+        ?>
+    </div>
+    <?php
+    $this->Form->end();
+    ?>
+
+    <div class="pad">
+        <?php
+        $this->Form->create();
+        $this->Form->fieldHidden('action', 'reset_zone');
+        ?>
+        <button type="submit" class="btn btn-warning">
+            <i class="fas fa-undo"></i> <?php $this->_('Opensrs.tab_dns.field_reset');?>
+        </button>
+        <?php
+        $this->Form->end();
+        ?>
+    </div>

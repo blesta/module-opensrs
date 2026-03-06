@@ -9,6 +9,10 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_provisioning.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_transfer.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_forwarding.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_dnssec.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_ssl.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_users.php';
 
@@ -43,6 +47,11 @@ class OpensrsApi
      * @var bool Whether or not to process in sandbox mode (for testing)
      */
     private $sandbox;
+
+    /**
+     * @var mixed The logger instance
+     */
+    private $logger;
 
     /**
      * @var array An array representing the last request made
@@ -87,11 +96,11 @@ class OpensrsApi
         }
 
         // Build signature
-        $siganture = md5($xml_request . $this->key);
+        $signature = md5($xml_request . $this->key);
         $headers = [
             'Content-Type: text/xml',
             'X-Username: ' . trim($this->username),
-            'X-Signature: ' . md5($siganture . $this->key),
+            'X-Signature: ' . md5($signature . $this->key),
             'Content-Length: ' . strlen($xml_request)
         ];
 
@@ -109,6 +118,8 @@ class OpensrsApi
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xml_request);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
         if (Configure::get('Blesta.curl_verify_ssl')) {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
@@ -120,8 +131,11 @@ class OpensrsApi
 
         $response = curl_exec($ch);
 
-        if ($response == false) {
+        if ($response === false) {
             $this->logger->error(curl_error($ch));
+            curl_close($ch);
+
+            return new OpensrsResponse('');
         }
 
         curl_close($ch);
@@ -182,11 +196,11 @@ class OpensrsApi
             if (is_array($value)) {
                 $assoc = $dt_assoc->addChild('item');
                 $assoc->addAttribute('key', $key);
-                $assoc = $assoc->addChild(isset($value[0]) ? 'dt_array' : 'dt_assoc');
+                $assoc = $assoc->addChild((empty($value) || isset($value[0])) ? 'dt_array' : 'dt_assoc');
 
                 $this->buildRecursiveAttributes($assoc, $value);
             } else {
-                $dt_assoc->addChild('item', $value)
+                $dt_assoc->addChild('item', htmlspecialchars((string) $value, ENT_XML1, 'UTF-8'))
                     ->addAttribute('key', $key);
             }
         }

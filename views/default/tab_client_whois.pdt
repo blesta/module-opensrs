@@ -16,7 +16,6 @@
 
             <div class="tab-content">
                 <?php
-                $i = 0;
                 foreach ($sections as $index => $key) {
                 ?>
                 <div class="tab-pane fade<?php echo $index == 0 ? ' active show' : '';?>" id="<?php echo (isset($key) ? $this->Html->safe($key) : null);?>">

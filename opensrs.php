@@ -82,7 +82,10 @@ class Opensrs extends RegistrarModule
 
 
         // Fetch pricing from the registrar
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return [];
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
         $domains = new OpensrsDomains($api);
 
@@ -106,9 +109,7 @@ class Opensrs extends RegistrarModule
             if ($register_response->status() != 'OK') {
                 continue;
             }
-            foreach (range(1, 10) as $years) {
-                $pricing[$tld]['register'] = $register_response->response();
-            }
+            $pricing[$tld]['register'] = $register_response->response();
 
             // Set the renewal prices
             $renew_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'renewal']));
@@ -116,9 +117,7 @@ class Opensrs extends RegistrarModule
             if ($renew_response->status() != 'OK') {
                 continue;
             }
-            foreach (range(1, 10) as $years) {
-                $pricing[$tld]['renew'] = $renew_response->response();
-            }
+            $pricing[$tld]['renew'] = $renew_response->response();
 
             // Set the transfer prices
             $transfer_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'transfer']));
@@ -126,9 +125,7 @@ class Opensrs extends RegistrarModule
             if ($transfer_response->status() != 'OK') {
                 continue;
             }
-            foreach (range(1, 10) as $years) {
-                $pricing[$tld]['transfer'] = $transfer_response->response();
-            }
+            $pricing[$tld]['transfer'] = $transfer_response->response();
         }
         unset($tld);
 
@@ -214,7 +211,7 @@ class Opensrs extends RegistrarModule
      * @param array $vars An array of user supplied info to satisfy the request
      * @return bool True if the service validates, false otherwise. Sets Input errors when false.
      */
-    public function validateService($package, array $vars = null)
+    public function validateService($package, ?array $vars = null)
     {
         $this->Input->setRules($this->getServiceRules($vars));
 
@@ -228,7 +225,7 @@ class Opensrs extends RegistrarModule
      * @param array $vars An array of user-supplied info to satisfy the request
      * @return bool True if the service update validates or false otherwise. Sets Input errors when false.
      */
-    public function validateServiceEdit($service, array $vars = null)
+    public function validateServiceEdit($service, ?array $vars = null)
     {
         $this->Input->setRules($this->getServiceRules($vars, true));
 
@@ -242,7 +239,7 @@ class Opensrs extends RegistrarModule
      * @param bool $edit True to get the edit rules, false for the add rules
      * @return array Service rules
      */
-    private function getServiceRules(array $vars = null, $edit = false)
+    private function getServiceRules(?array $vars = null, $edit = false)
     {
         // Validate .fr TLD rules
         $fr_fields = Configure::get('Opensrs.domain_fields.fr');
@@ -291,7 +288,7 @@ class Opensrs extends RegistrarModule
                 'tld_data[registrant_extra_info][trademark_number]'
             ];
 
-            if ($vars['tld_data']['registrant_extra_info']['registrant_type'] == 'organization') {
+            if ($vars['tld_data']['registrant_extra_info']['registrant_type'] == 'individual') {
                 foreach ($company_fields as $field) {
                     unset($rules[$field]);
                 }
@@ -326,7 +323,7 @@ class Opensrs extends RegistrarModule
      */
     public function addService(
         $package,
-        array $vars = null,
+        ?array $vars = null,
         $parent_package = null,
         $parent_service = null,
         $status = 'pending'
@@ -364,12 +361,18 @@ class Opensrs extends RegistrarModule
             Loader::loadModels($this, ['Contacts']);
         }
 
-        $client = $this->Clients->get($vars['client_id']);
+        $client = $this->Clients->get($vars['client_id'] ?? null);
         if ($client) {
             $contact_numbers = $this->Contacts->getNumbers($client->contact_id);
+        } else {
+            $contact_numbers = [];
         }
 
         foreach ($whois_fields as $key => $value) {
+            if (!$client) {
+                $vars[$key] = 'NA';
+                continue;
+            }
             if (str_contains($key, 'first_name')) {
                 $vars[$key] = $client->first_name;
             } elseif (str_contains($key, 'last_name')) {
@@ -437,15 +440,20 @@ class Opensrs extends RegistrarModule
             }
 
             // Set nameservers
-            $this->setDomainNameservers($vars['domain'], $package->module_row, [
+            $this->setDomainNameservers($vars['domain'], $package->module_row, array_filter([
                 $fields['nameserver_list'][0]['name'] ?? '',
                 $fields['nameserver_list'][1]['name'] ?? '',
                 $fields['nameserver_list'][2]['name'] ?? '',
                 $fields['nameserver_list'][3]['name'] ?? '',
-            ]);
+            ]));
 
-            // Ignore nameserver errors
-            $this->Input->setErrors([]);
+            // Clear nameserver errors only (registration already succeeded)
+            if ($this->Input->errors()) {
+                $errors = $this->Input->errors();
+                if (isset($errors['errors']) && count($errors) === 1) {
+                    $this->Input->setErrors([]);
+                }
+            }
 
             return [['key' => 'domain', 'value' => $vars['domain'], 'encrypted' => 0]];
         }
@@ -508,6 +516,156 @@ class Opensrs extends RegistrarModule
     }
 
     /**
+     * Cancels the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being canceled.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being canceled (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function cancelService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return null;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        $domains_provisioning = new OpensrsDomainsProvisioning($api);
+        $response = $domains_provisioning->modify([
+            'domain' => $fields->domain,
+            'data' => 'expire_action',
+            'affect_domains' => '0',
+            'auto_renew' => '0',
+            'let_expire' => '1'
+        ]);
+        $this->processResponse($api, $response);
+
+        return null;
+    }
+
+    /**
+     * Suspends the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being suspended.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being suspended (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function suspendService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        return $this->cancelService($package, $service, $parent_package, $parent_service);
+    }
+
+    /**
+     * Unsuspends the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being unsuspended.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being unsuspended (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function unsuspendService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return null;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        $domains_provisioning = new OpensrsDomainsProvisioning($api);
+        $response = $domains_provisioning->modify([
+            'domain' => $fields->domain,
+            'data' => 'expire_action',
+            'affect_domains' => '0',
+            'auto_renew' => '1',
+            'let_expire' => '0'
+        ]);
+        $this->processResponse($api, $response);
+
+        return null;
+    }
+
+    /**
+     * Edits the service on the remote server.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $vars An array of user supplied info to satisfy the request
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being edited (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function editService($package, $service, array $vars = [], $parent_package = null, $parent_service = null)
+    {
+        return null;
+    }
+
+    /**
+     * Restores a domain in the redemption grace period
+     *
+     * @param string $domain The domain to restore
+     * @param int $module_row_id The ID of the module row to fetch for the current module
+     * @return bool True if the domain was successfully restored, false otherwise
+     */
+    public function restoreDomain($domain, $module_row_id = null, array $vars = [])
+    {
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $domains = new OpensrsDomainsProvisioning($api);
+        $response = $domains->redeem(['domain' => $domain]);
+        $this->processResponse($api, $response);
+
+        return $response->status() == 'OK';
+    }
+
+    /**
      * Validates input data when attempting to add a package, returns the meta
      * data to save when adding a package. Performs any action required to add
      * the package on the remote server. Sets Input errors on failure,
@@ -521,7 +679,7 @@ class Opensrs extends RegistrarModule
      * @see Module::getModule()
      * @see Module::getModuleRow()
      */
-    public function addPackage(array $vars = null)
+    public function addPackage(?array $vars = null)
     {
         $meta = [];
         if (isset($vars['meta']) && is_array($vars['meta'])) {
@@ -553,7 +711,7 @@ class Opensrs extends RegistrarModule
      * @see Module::getModule()
      * @see Module::getModuleRow()
      */
-    public function editPackage($package, array $vars = null)
+    public function editPackage($package, ?array $vars = null)
     {
         $meta = [];
         if (isset($vars['meta']) && is_array($vars['meta'])) {
@@ -964,11 +1122,25 @@ class Opensrs extends RegistrarModule
     {
         Loader::loadModels($this, ['Packages']);
 
+        $package = null;
+        if (isset($service->package) && $service->package) {
+            $package = $service->package;
+        } elseif (isset($service->pricing_id)) {
+            $package = $this->Packages->getByPricingId($service->pricing_id);
+        }
+
         $tabs = [
             'tabWhois' => Language::_('Opensrs.tab_whois.title', true),
             'tabNameservers' => Language::_('Opensrs.tab_nameservers.title', true),
             'tabSettings' => Language::_('Opensrs.tab_settings.title', true)
         ];
+
+        if ($this->featureServiceEnabled('dns_management', $service)) {
+            $tabs['tabDns'] = Language::_('Opensrs.tab_dns.title', true);
+            $tabs['tabUrlForwarding'] = Language::_('Opensrs.tab_url_forwarding.title', true);
+        }
+
+        $tabs['tabDnssec'] = Language::_('Opensrs.tab_dnssec.title', true);
 
         return $tabs;
     }
@@ -1005,6 +1177,22 @@ class Opensrs extends RegistrarModule
             ]
         ];
 
+        if ($this->featureServiceEnabled('dns_management', $service)) {
+            $tabs['tabClientDns'] = [
+                'name' => Language::_('Opensrs.tab_dns.title', true),
+                'icon' => 'fas fa-globe'
+            ];
+            $tabs['tabClientUrlForwarding'] = [
+                'name' => Language::_('Opensrs.tab_url_forwarding.title', true),
+                'icon' => 'fas fa-share'
+            ];
+        }
+
+        $tabs['tabClientDnssec'] = [
+            'name' => Language::_('Opensrs.tab_dnssec.title', true),
+            'icon' => 'fas fa-shield-alt'
+        ];
+
         return $tabs;
     }
 
@@ -1018,7 +1206,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabWhois($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabWhois($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageWhois('tab_whois', $package, $service, $get, $post, $files);
     }
@@ -1033,7 +1221,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientWhois($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientWhois($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageWhois('tab_client_whois', $package, $service, $get, $post, $files);
     }
@@ -1048,7 +1236,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabNameservers($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabNameservers($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageNameservers('tab_nameservers', $package, $service, $get, $post, $files);
     }
@@ -1063,7 +1251,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientNameservers($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientNameservers($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageNameservers('tab_client_nameservers', $package, $service, $get, $post, $files);
     }
@@ -1078,7 +1266,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabSettings($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabSettings($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageSettings('tab_settings', $package, $service, $get, $post, $files);
     }
@@ -1093,9 +1281,104 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    public function tabClientSettings($package, $service, array $get = null, array $post = null, array $files = null)
+    public function tabClientSettings($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         return $this->manageSettings('tab_client_settings', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin DNS tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabDns($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
+    {
+        return $this->manageDns('tab_dns', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Client DNS tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabClientDns($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
+    {
+        return $this->manageDns('tab_client_dns', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin URL Forwarding tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabUrlForwarding($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
+    {
+        return $this->manageUrlForwarding('tab_url_forwarding', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Client URL Forwarding tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabClientUrlForwarding(
+        $package,
+        $service,
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
+    ) {
+        return $this->manageUrlForwarding('tab_client_url_forwarding', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin DNSSEC tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabDnssec($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
+    {
+        return $this->manageDnssec('tab_dnssec', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Client DNSSEC tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabClientDnssec($package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
+    {
+        return $this->manageDnssec('tab_client_dnssec', $package, $service, $get, $post, $files);
     }
 
     /**
@@ -1109,7 +1392,7 @@ class Opensrs extends RegistrarModule
      * @param array $files Any FILES parameters
      * @return string The string representing the contents of this tab
      */
-    private function manageWhois($view, $package, $service, array $get = null, array $post = null, array $files = null)
+    private function manageWhois($view, $package, $service, ?array $get = null, ?array $post = null, ?array $files = null)
     {
         $this->view = new View($view, 'default');
 
@@ -1184,9 +1467,9 @@ class Opensrs extends RegistrarModule
         $view,
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         $this->view = new View($view, 'default');
 
@@ -1234,16 +1517,19 @@ class Opensrs extends RegistrarModule
         $view,
         $package,
         $service,
-        array $get = null,
-        array $post = null,
-        array $files = null
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
     ) {
         $this->view = new View($view, 'default');
 
         // Load the helpers required for this view
         Loader::loadHelpers($this, ['Form', 'Html']);
 
-        $row = $this->getModuleRow($package->module_row);
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $vars = new stdClass();
@@ -1257,7 +1543,7 @@ class Opensrs extends RegistrarModule
 
         if (!empty($post)) {
             // Set domain status
-            if ($post['registrar_lock'] == 'true') {
+            if (($post['registrar_lock'] ?? 'false') == 'true') {
                 $this->lockDomain($fields->domain, $package->module_row);
             } else {
                 $this->unlockDomain($fields->domain, $package->module_row);
@@ -1269,7 +1555,7 @@ class Opensrs extends RegistrarModule
                 'domain' => $fields->domain,
                 'data' => 'whois_privacy_state',
                 'affect_domains' => '0',
-                'state' => $post['whois_privacy_state'] == 'true' ? 'Y' : 'N'
+                'state' => ($post['whois_privacy_state'] ?? 'false') == 'true' ? 'Y' : 'N'
             ]);
             $this->processResponse($api, $response);
 
@@ -1299,6 +1585,381 @@ class Opensrs extends RegistrarModule
     }
 
     /**
+     * Handle DNS zone management
+     *
+     * @param string $view The view to use
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    private function manageDns(
+        $view,
+        $package,
+        $service,
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
+    ) {
+        $this->view = new View($view, 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $vars = new stdClass();
+        $fields = $this->serviceFieldsToObject($service->fields);
+        $dns = new OpensrsDomainsDns($api);
+
+        if (!empty($post)) {
+            if (isset($post['action'])) {
+                if ($post['action'] == 'add_record') {
+                    // Get existing records, add new one, set zone
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        // Add the new record
+                        $new_record = [
+                            'type' => $post['type'] ?? 'A',
+                            'subdomain' => $post['subdomain'] ?? '',
+                            'ip_address' => $post['ip_address'] ?? '',
+                            'priority' => $post['priority'] ?? '',
+                            'ttl' => $post['ttl'] ?? '3600'
+                        ];
+
+                        // Build the records for setDnsZone
+                        $type_key = strtolower($new_record['type']);
+                        if (!isset($records[$type_key]) || !is_array($records[$type_key])) {
+                            $records[$type_key] = [];
+                        }
+                        $records[$type_key][] = $new_record;
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                } elseif ($post['action'] == 'delete_record') {
+                    // Get existing records, remove specified one, set zone
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        $delete_type = strtolower($post['record_type'] ?? '');
+                        $delete_index = (int)($post['record_index'] ?? -1);
+
+                        if (isset($records[$delete_type][$delete_index])) {
+                            unset($records[$delete_type][$delete_index]);
+                            $records[$delete_type] = array_values($records[$delete_type]);
+                        }
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                } elseif ($post['action'] == 'reset_zone') {
+                    $response = $dns->resetDnsZone([
+                        'domain' => $fields->domain
+                    ]);
+                    $this->processResponse($api, $response);
+                }
+            }
+        }
+
+        // Fetch current zone records
+        $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+        $records = [];
+        if ($zone_response->status() == 'OK') {
+            $zone = $zone_response->response();
+            $raw_records = $zone->attributes['records'] ?? [];
+
+            // Flatten records into a single array for display
+            foreach ($raw_records as $type => $type_records) {
+                if (is_array($type_records)) {
+                    foreach ($type_records as $index => $record) {
+                        if (is_array($record)) {
+                            $record['record_type'] = strtoupper($type);
+                            $record['record_index'] = $index;
+                            $records[] = $record;
+                        }
+                    }
+                }
+            }
+        } else {
+            $this->Input->setErrors([]);
+        }
+
+        $this->view->set('records', $records);
+        $this->view->set('vars', $vars);
+        $this->view->set('record_types', [
+            'A' => 'A',
+            'AAAA' => 'AAAA',
+            'CNAME' => 'CNAME',
+            'MX' => 'MX',
+            'TXT' => 'TXT',
+            'SRV' => 'SRV',
+            'NS' => 'NS'
+        ]);
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
+    }
+
+    /**
+     * Handle URL forwarding management
+     *
+     * @param string $view The view to use
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    private function manageUrlForwarding(
+        $view,
+        $package,
+        $service,
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
+    ) {
+        $this->view = new View($view, 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $vars = new stdClass();
+        $fields = $this->serviceFieldsToObject($service->fields);
+        $dns = new OpensrsDomainsDns($api);
+
+        if (!empty($post)) {
+            if (isset($post['action'])) {
+                if ($post['action'] == 'set_forwarding') {
+                    // Build URL forwarding record via DNS A/CNAME + URL forwarding
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        // Add forwarding record
+                        if (!isset($records['url_forwarding']) || !is_array($records['url_forwarding'])) {
+                            $records['url_forwarding'] = [];
+                        }
+                        $records['url_forwarding'][] = [
+                            'subdomain' => $post['subdomain'] ?? '@',
+                            'ip_address' => $post['destination'] ?? '',
+                            'type' => $post['redirect_type'] ?? '301'
+                        ];
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                } elseif ($post['action'] == 'delete_forwarding') {
+                    $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+                    $this->processResponse($api, $zone_response);
+
+                    if ($zone_response->status() == 'OK') {
+                        $zone = $zone_response->response();
+                        $records = $zone->attributes['records'] ?? [];
+
+                        $delete_index = (int)($post['record_index'] ?? -1);
+                        if (isset($records['url_forwarding'][$delete_index])) {
+                            unset($records['url_forwarding'][$delete_index]);
+                            $records['url_forwarding'] = array_values($records['url_forwarding']);
+                        }
+
+                        $response = $dns->setDnsZone([
+                            'domain' => $fields->domain,
+                            'records' => $records
+                        ]);
+                        $this->processResponse($api, $response);
+                    }
+                }
+            }
+        }
+
+        // Fetch current forwarding records
+        $forwarding_records = [];
+        $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
+        if ($zone_response->status() == 'OK') {
+            $zone = $zone_response->response();
+            $raw_records = $zone->attributes['records']['url_forwarding'] ?? [];
+            foreach ($raw_records as $index => $record) {
+                if (is_array($record)) {
+                    $record['record_index'] = $index;
+                    $forwarding_records[] = $record;
+                }
+            }
+        } else {
+            $this->Input->setErrors([]);
+        }
+
+        $this->view->set('forwarding_records', $forwarding_records);
+        $this->view->set('vars', $vars);
+        $this->view->set('redirect_types', [
+            '301' => Language::_('Opensrs.tab_url_forwarding.redirect_301', true),
+            '302' => Language::_('Opensrs.tab_url_forwarding.redirect_302', true),
+            'frame' => Language::_('Opensrs.tab_url_forwarding.redirect_frame', true)
+        ]);
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
+    }
+
+    /**
+     * Handle DNSSEC management
+     *
+     * @param string $view The view to use
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    private function manageDnssec(
+        $view,
+        $package,
+        $service,
+        ?array $get = null,
+        ?array $post = null,
+        ?array $files = null
+    ) {
+        $this->view = new View($view, 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $vars = new stdClass();
+        $fields = $this->serviceFieldsToObject($service->fields);
+        $dnssec = new OpensrsDomainsDnssec($api);
+
+        if (!empty($post)) {
+            if (isset($post['action'])) {
+                if ($post['action'] == 'add_ds_record') {
+                    // Get existing records, add new one
+                    $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+                    $this->logRequest($api, $info_response);
+                    $existing_records = [];
+                    if ($info_response->status() == 'OK') {
+                        $info = $info_response->response();
+                        $existing_records = $info->attributes['dnssec'] ?? [];
+                    }
+
+                    $new_record = [
+                        'key_tag' => $post['key_tag'] ?? '',
+                        'algorithm' => $post['algorithm'] ?? '',
+                        'digest_type' => $post['digest_type'] ?? '',
+                        'digest' => $post['digest'] ?? ''
+                    ];
+
+                    $existing_records[] = $new_record;
+
+                    $response = $dnssec->addDnssecRecord([
+                        'domain' => $fields->domain,
+                        'dnssec' => $existing_records
+                    ]);
+                    $this->processResponse($api, $response);
+                } elseif ($post['action'] == 'delete_ds_record') {
+                    // Get existing records, remove specified one
+                    $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+                    $this->logRequest($api, $info_response);
+                    $existing_records = [];
+                    if ($info_response->status() == 'OK') {
+                        $info = $info_response->response();
+                        $existing_records = $info->attributes['dnssec'] ?? [];
+                    }
+
+                    $delete_index = (int)($post['record_index'] ?? -1);
+                    if (isset($existing_records[$delete_index])) {
+                        unset($existing_records[$delete_index]);
+                        $existing_records = array_values($existing_records);
+                    }
+
+                    $response = $dnssec->addDnssecRecord([
+                        'domain' => $fields->domain,
+                        'dnssec' => $existing_records
+                    ]);
+                    $this->processResponse($api, $response);
+                }
+            }
+        }
+
+        // Fetch current DS records
+        $ds_records = [];
+        $info_response = $dnssec->getDnssecRecords(['domain' => $fields->domain]);
+        $this->logRequest($api, $info_response);
+        if ($info_response->status() == 'OK') {
+            $info = $info_response->response();
+            $raw_records = $info->attributes['dnssec'] ?? [];
+            foreach ($raw_records as $index => $record) {
+                if (is_array($record)) {
+                    $record['record_index'] = $index;
+                    $ds_records[] = $record;
+                }
+            }
+        }
+
+        $this->view->set('ds_records', $ds_records);
+        $this->view->set('vars', $vars);
+        $this->view->set('algorithms', [
+            '3' => '3 - DSA/SHA-1',
+            '5' => '5 - RSA/SHA-1',
+            '6' => '6 - DSA-NSEC3-SHA1',
+            '7' => '7 - RSASHA1-NSEC3-SHA1',
+            '8' => '8 - RSA/SHA-256',
+            '10' => '10 - RSA/SHA-512',
+            '13' => '13 - ECDSA/SHA-256',
+            '14' => '14 - ECDSA/SHA-384',
+            '15' => '15 - Ed25519',
+            '16' => '16 - Ed448'
+        ]);
+        $this->view->set('digest_types', [
+            '1' => '1 - SHA-1',
+            '2' => '2 - SHA-256',
+            '4' => '4 - SHA-384'
+        ]);
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
+    }
+
+    /**
      * Verifies that the provided domain name is available
      *
      * @param string $domain The domain to lookup
@@ -1307,7 +1968,10 @@ class Opensrs extends RegistrarModule
      */
     public function checkAvailability($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1332,8 +1996,24 @@ class Opensrs extends RegistrarModule
      */
     public function checkTransferAvailability($domain, $module_row_id = null)
     {
-        // Prevent users from transferring an unregistered domain
-        return !$this->checkAvailability($domain, $module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $transfers = new OpensrsDomainsTransfer($api);
+        $result = $transfers->checkTransfer(['domain' => $domain]);
+        $this->logRequest($api, $result);
+
+        if ($result->status() != 'OK') {
+            // Fall back to inverse availability check
+            return !$this->checkAvailability($domain, $module_row_id);
+        }
+
+        $response = $result->response();
+
+        return ($response->attributes['transferrable'] ?? '0') == '1';
     }
 
     /**
@@ -1357,7 +2037,10 @@ class Opensrs extends RegistrarModule
      */
     public function getDomainContacts($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return [];
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1366,6 +2049,10 @@ class Opensrs extends RegistrarModule
             'type' => 'all_info'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return [];
+        }
         $response = $response->response();
 
         $contacts = $response->attributes['contact_set'] ?? [];
@@ -1402,7 +2089,10 @@ class Opensrs extends RegistrarModule
      */
     public function setDomainContacts($domain, array $vars = [], $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains_provisioning = new OpensrsDomainsProvisioning($api);
@@ -1411,7 +2101,7 @@ class Opensrs extends RegistrarModule
         $contact_set = [];
         foreach ($vars as $contact) {
             $contact['phone'] = $this->formatPhone($contact['phone'], $contact['country']);
-            $contact['postal_code'] = $contact['zip'] ?? '00000';
+            $contact['postal_code'] = $contact['postal_code'] ?? $contact['zip'] ?? '00000';
             $contact_set[$contact['external_id'] ?? 'owner'] = $contact;
         }
 
@@ -1438,7 +2128,10 @@ class Opensrs extends RegistrarModule
      */
     public function getDomainInfo($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return [];
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1447,6 +2140,10 @@ class Opensrs extends RegistrarModule
             'type' => 'all_info'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return [];
+        }
         $response = $response->response();
 
         return $response->attributes ?? [];
@@ -1461,7 +2158,10 @@ class Opensrs extends RegistrarModule
      */
     public function getDomainIsLocked($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1470,9 +2170,13 @@ class Opensrs extends RegistrarModule
             'type' => 'status'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return false;
+        }
         $response = $response->response();
 
-        return $response->attributes['lock_state'] == '1';
+        return ($response->attributes['lock_state'] ?? '0') == '1';
     }
 
     /**
@@ -1484,7 +2188,10 @@ class Opensrs extends RegistrarModule
      */
     private function getDomainIsPrivate($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1493,9 +2200,13 @@ class Opensrs extends RegistrarModule
             'type' => 'whois_privacy_state'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return false;
+        }
         $response = $response->response();
 
-        return $response->attributes['state'] == 'enabled';
+        return ($response->attributes['state'] ?? 'disabled') == 'enabled';
     }
 
     /**
@@ -1513,10 +2224,10 @@ class Opensrs extends RegistrarModule
         $domain_info = $this->getDomainInfo($domain, $module_row_id);
 
         $nameservers = [];
-        foreach ($domain_info['nameserver_list'] as $nameserver) {
+        foreach ($domain_info['nameserver_list'] ?? [] as $nameserver) {
             $nameservers[] = [
                 'url' => $nameserver['name'] ?? '',
-                'ips' => [$nameserver['ipaddress'] ?? gethostbyname($nameserver['name'] ?? '')]
+                'ips' => [$nameserver['ipaddress'] ?? '']
             ];
         }
 
@@ -1533,10 +2244,13 @@ class Opensrs extends RegistrarModule
      */
     public function setDomainNameservers($domain, $module_row_id = null, array $vars = [])
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
-        $domains_provisioning = new OpensrsDomainsNs($api);
+        $domains_ns = new OpensrsDomainsNs($api);
 
         // Remove empty nameservers
         foreach ($vars as $key => $ns) {
@@ -1546,7 +2260,7 @@ class Opensrs extends RegistrarModule
         }
 
         // Update domain
-        $response = $domains_provisioning->advancedUpdateNameserver([
+        $response = $domains_ns->advancedUpdateNameserver([
             'domain' => $domain,
             'op_type' => 'assign',
             'assign_ns' => array_values($vars)
@@ -1565,7 +2279,10 @@ class Opensrs extends RegistrarModule
      */
     public function lockDomain($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains_provisioning = new OpensrsDomainsProvisioning($api);
@@ -1591,7 +2308,10 @@ class Opensrs extends RegistrarModule
      */
     public function unlockDomain($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains_provisioning = new OpensrsDomainsProvisioning($api);
@@ -1620,7 +2340,10 @@ class Opensrs extends RegistrarModule
      */
     public function registerDomain($domain, $module_row_id = null, array $vars = [])
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         // Set all whois info from client
@@ -1636,7 +2359,7 @@ class Opensrs extends RegistrarModule
             'auto_renew' => 0,
             'reg_type' => isset($vars['auth_info']) ? 'transfer' : 'new',
             'reg_username' => 'usr' . ($client->id_value ?? $client->id ?? rand(10000, 99999)),
-            'reg_password' => substr(base64_encode(md5($client->id_value)), 0, 15),
+            'reg_password' => substr(bin2hex(random_bytes(10)), 0, 15),
             'handle' => 'process'
         ];
         $fields = array_merge($params, $vars);
@@ -1694,7 +2417,10 @@ class Opensrs extends RegistrarModule
      */
     public function renewDomain($domain, $module_row_id = null, array $vars = [])
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $params = [
@@ -1727,7 +2453,10 @@ class Opensrs extends RegistrarModule
         $domain = $this->getServiceDomain($service);
         $module_row_id = $service->module_row_id ?? null;
 
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1761,7 +2490,10 @@ class Opensrs extends RegistrarModule
         $domain = $this->getServiceDomain($service);
         $module_row_id = $service->module_row_id ?? null;
 
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1855,11 +2587,42 @@ class Opensrs extends RegistrarModule
      */
     public function validateConnection($key, $user, $sandbox)
     {
-        $api = $this->getApi($user, $key, $sandbox == 'true');
-        $domains = new OpensrsDomains($api);
-        $response = $domains->lookup(['domain' => 'blesta.com'])->response();
+        try {
+            $api = $this->getApi($user, $key, $sandbox == 'true');
+            $domains = new OpensrsDomains($api);
+            $result = $domains->lookup(['domain' => 'blesta.com']);
 
-        return $response->is_success == '1';
+            if ($result->status() != 'OK') {
+                return false;
+            }
+
+            $response = $result->response();
+
+            return ($response->is_success ?? '0') == '1';
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Gets a module row, setting errors if not found
+     *
+     * @param int|null $module_row_id The module row ID
+     * @return stdClass|null The module row, or null if not found
+     */
+    private function getModuleRowOrFail($module_row_id)
+    {
+        $row = $this->getModuleRow($module_row_id);
+
+        if (!$row) {
+            $this->Input->setErrors(['errors' => [
+                Language::_('Opensrs.!error.module_row.missing', true)
+            ]]);
+
+            return null;
+        }
+
+        return $row;
     }
 
     /**
@@ -1889,7 +2652,8 @@ class Opensrs extends RegistrarModule
 
         // Set errors, if any
         if ($response->status() != 'OK') {
-            $errors = isset($response->errors()->response_text) ? $response->errors()->response_text : '';
+            $error_obj = $response->errors();
+            $errors = $error_obj->response_text ?? 'An unknown error occurred';
             $this->Input->setErrors(['errors' => [$errors]]);
         }
     }
