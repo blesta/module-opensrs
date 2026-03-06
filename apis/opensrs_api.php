@@ -196,7 +196,7 @@ class OpensrsApi
             if (is_array($value)) {
                 $assoc = $dt_assoc->addChild('item');
                 $assoc->addAttribute('key', $key);
-                $assoc = $assoc->addChild(isset($value[0]) ? 'dt_array' : 'dt_assoc');
+                $assoc = $assoc->addChild((empty($value) || isset($value[0])) ? 'dt_array' : 'dt_assoc');
 
                 $this->buildRecursiveAttributes($assoc, $value);
             } else {
