@@ -1858,9 +1858,10 @@ class Opensrs extends RegistrarModule
     {
         $api = $this->getApi($user, $key, $sandbox == 'true');
         $domains = new OpensrsDomains($api);
-        $response = $domains->lookup(['domain' => 'blesta.com'])->response();
+        $response = $domains->lookup(['domain' => 'blesta.com']);
+        $this->logRequest($api, $response);
 
-        return $response->is_success == '1';
+        return $response->response()->is_success == '1';
     }
 
     /**

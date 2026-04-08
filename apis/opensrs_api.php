@@ -51,6 +51,11 @@ class OpensrsApi
     private $last_request = ['url' => null, 'args' => null];
 
     /**
+     * @var Blesta\Core\ServiceProviders\Logger Container logger
+     */
+    private $logger;
+
+    /**
      * Sets the connection details
      *
      * @param string $username The user to connect as
