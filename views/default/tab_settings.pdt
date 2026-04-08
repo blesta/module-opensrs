@@ -32,7 +32,7 @@
 
     <?php if ($id_protection ?? false) { ?>
     <div class="mb-3">
-    <?php $this->Form->label($this->_('Opensrs.tab_settings.field_whois_privacy', true), 'whois_privacy_state', [
+        <?php $this->Form->label($this->_('Opensrs.tab_settings.field_whois_privacy', true), 'whois_privacy_state', [
         'class' => 'form-label',
     ]); ?>
         <div class="form-check">
