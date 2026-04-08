@@ -1,4 +1,5 @@
 <?php
+
 // All available TLDs
 Configure::set('Opensrs.tlds', [
     '.abogado',

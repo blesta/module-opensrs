@@ -1,5 +1,5 @@
 {
-    "version": "1.2.0",
+    "version": "2.0.0",
     "type": "registrar",
     "name": "Opensrs.name",
     "description": "Opensrs.description",
@@ -23,12 +23,15 @@
     "email_tags": {
         "module": [],
         "package": [],
-        "service": ["domain"]
+        "service": [
+            "domain"
+        ]
     },
     "features": {
         "dns_management": 1,
         "email_forwarding": 0,
         "id_protection": 1,
         "epp_code": 1
-    }
+    },
+    "icon": "bi-globe"
 }

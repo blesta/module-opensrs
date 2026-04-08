@@ -1,12 +1,11 @@
 
-    <?php
-    if (($fields ?? null) && !empty($fields)) {
-    ?>
-        <div id="<?php echo $this->Html->safe($this->Html->concat('_', ($module->class ?? null), ($module->id ?? null)));?>">
+    <?php if (($fields ?? null) && !empty($fields)) { ?>
+        <div id="<?php echo $this->Html->safe(
+            $this->Html->concat('_', $module->class ?? null, $module->id ?? null),
+        ); ?>">
             <?php
             $i = 0;
-            foreach ($fields as $field) {
-            ?>
+            foreach ($fields as $field) { ?>
             <div class="form-group">
                 <?php
                 // Draw the primary label/field
@@ -39,20 +38,17 @@
                     }
                 }
 
-                foreach ($tooltips as $tooltip) {
-                ?>
-                <a href="#" data-toggle="tooltip" title="<?php echo (isset($tooltip->params['message']) ? $this->Html->safe($tooltip->params['message']) : null);?>"><i class="fas fa-question-circle text-primary"></i></a>
-                <?php
-                }
+                foreach ($tooltips as $tooltip) { ?>
+                <a href="#" data-toggle="tooltip" title="<?php echo isset($tooltip->params['message'])
+                    ? $this->Html->safe($tooltip->params['message'])
+                    : null; ?>"><i class="fas fa-question-circle text-primary"></i></a>
+                <?php }
                 ?>
             </div>
-            <?php
-            }
+            <?php }
             ?>
         </div>
-    <?php
-    }
-    ?>
+    <?php } ?>
 <script type="text/javascript">
 $(document).ready(function() {
     $(this).blestaBindToolTips();

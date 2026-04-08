@@ -1,10 +1,8 @@
 
-    <?php
-    $this->Form->create();
-    ?>
+    <?php $this->Form->create(); ?>
     <div class="row panel-fix">
         <div class="col-md-12">
-            <h4><?php $this->_('Opensrs.tab_settings.field_registrar_lock');?></h4>
+            <h4><?php $this->_('Opensrs.tab_settings.field_registrar_lock'); ?></h4>
             <div class="form-group">
                 <div class="radio">
                     <label>
@@ -25,16 +23,18 @@
             </div>
         </div>
 
-        <?php
-        if ($id_protection ?? false) {
-        ?>
+        <?php if ($id_protection ?? false) { ?>
         <div class="col-md-12">
-            <h4><?php $this->_('Opensrs.tab_settings.field_whois_privacy');?></h4>
+            <h4><?php $this->_('Opensrs.tab_settings.field_whois_privacy'); ?></h4>
             <div class="form-group">
                 <div class="radio">
                     <label>
                         <?php
-                        $this->Form->fieldRadio('whois_privacy_state', 'true', ($vars->whois_privacy_state ?? null) == 'true');
+                        $this->Form->fieldRadio(
+                            'whois_privacy_state',
+                            'true',
+                            ($vars->whois_privacy_state ?? null) == 'true',
+                        );
                         $this->_('Opensrs.tab_settings.field_whois_privacy_state_yes');
                         ?>
                     </label>
@@ -42,22 +42,22 @@
                 <div class="radio">
                     <label>
                         <?php
-                        $this->Form->fieldRadio('whois_privacy_state', 'false', ($vars->whois_privacy_state ?? null) == 'false');
+                        $this->Form->fieldRadio(
+                            'whois_privacy_state',
+                            'false',
+                            ($vars->whois_privacy_state ?? null) == 'false',
+                        );
                         $this->_('Opensrs.tab_settings.field_whois_privacy_state_no');
                         ?>
                     </label>
                 </div>
             </div>
         </div>
-        <?php
-        }
-        ?>
+        <?php } ?>
 
-        <?php
-        if ($epp_code ?? false) {
-        ?>
+        <?php if ($epp_code ?? false) { ?>
         <div class="col-md-12">
-            <h4><?php $this->_('Opensrs.tab_settings.field_epp_code');?></h4>
+            <h4><?php $this->_('Opensrs.tab_settings.field_epp_code'); ?></h4>
             <div class="form-group">
                 <div class="checkbox">
                     <label>
@@ -69,13 +69,10 @@
                 </div>
             </div>
         </div>
-        <?php
-        }
-        ?>
+        <?php } ?>
     </div>
     <button class="btn btn-light float-right" type="submit">
-        <i class="fas fa-edit"></i> <?php $this->_('Opensrs.tab_settings.field_submit');?>
+        <i class="fas fa-edit"></i> <?php $this->_('Opensrs.tab_settings.field_submit'); ?>
     </button>
-    <?php
-    $this->Form->end();
-    ?>
+    <?php $this->Form->end();
+?>

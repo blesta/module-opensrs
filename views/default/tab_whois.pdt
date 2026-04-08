@@ -1,79 +1,104 @@
+<?php /** @var View $this **/ ?>
 
+<?php $this->Form->create(); ?>
+
+<?php
+$i = 0;
+foreach ($sections as $key) { ?>
+<h6 class="form-section-header<?php echo $i == 0 ? ' first' : ''; ?>"><?php $this->_(
+    'Opensrs.tab_whois.section_' . $key,
+); ?></h6>
+<div>
+    <?php foreach ($fields as $field) {
+        if (!str_contains($field->params['for'], $key)) {
+            continue;
+        } ?>
+    <div class="mb-3">
     <?php
-    $this->Form->create();
-    ?>
-
-    <?php
-    $i = 0;
-    foreach ($sections as $key) {
-    ?>
-    <div class="title_row<?php echo ($i == 0 ? ' first' : '');?>">
-        <h3><?php $this->_('Opensrs.tab_whois.section_' . $key);?></h3>
-    </div>
-    <div class="pad">
-        <ul>
-            <?php
-            foreach ($fields as $field) {
-                if (!str_contains($field->params['for'], $key)) {
-                    continue;
-                }
-            ?>
-            <li>
-                <?php
-                // Draw the primary label/field
-                call_user_func_array([$this->Form, $field->type], $field->params);
-
-                // Draw each form field associated with this label
-                $tooltips = [];
-                foreach ($field->fields as $input) {
-                    // Collect all tooltips to be displayed at the end
-                    if ($input->type == 'tooltip') {
-                        $tooltips[] = $input;
-                        continue;
-                    }
-
-                    call_user_func_array([$this->Form, $input->type], $input->params);
-
-                    // Draw the form field's secondary label if checkbox or radio item
-                    if (($input->type == 'fieldCheckbox' || $input->type == 'fieldRadio') && isset($input->label)) {
-                        if (isset($input->label->params['attributes']['class'])) {
-                            if (is_array($input->label->params['attributes']['class'])) {
-                                $input->label->params['attributes']['class'][] = 'inline';
-                            } else {
-                                $input->label->params['attributes']['class'] .= ' inline';
-                            }
-                        } else {
-                            $input->label->params['attributes']['class'] = 'inline';
-                        }
-
-                        call_user_func_array([$this->Form, 'label'], $input->label->params);
-                    }
-                }
-
-                foreach ($tooltips as $tooltip) {
-                ?>
-                <span class="tooltip">
-                    <?php $this->_('AppController.tooltip.text');?>
-                    <div><?php echo (isset($tooltip->params['message']) ? $this->Html->safe($tooltip->params['message']) : null);?></div>
-                </span>
-                <?php
-                }
-                ?>
-            </li>
-            <?php
-            }
-            ?>
-        </ul>
-    </div>
-    <?php
-        $i++;
+    // Add Bootstrap 5 form-label class to labels
+    if ($field->type == 'label' && isset($field->params['attributes'])) {
+        if (isset($field->params['attributes']['class'])) {
+            $field->params['attributes']['class'] .= ' form-label';
+        } else {
+            $field->params['attributes']['class'] = 'form-label';
+        }
     }
+
+    // Draw the primary label/field
+    call_user_func_array([$this->Form, $field->type], $field->params);
+
+    // Draw each form field associated with this label
+    $tooltips = [];
+    $has_checkbox_or_radio = false;
+    foreach ($field->fields as $input) {
+        // Collect all tooltips to be displayed at the end
+        if ($input->type == 'tooltip') {
+            $tooltips[] = $input;
+            continue;
+        }
+
+        // Check if this is a checkbox or radio for wrapper handling
+        $is_check_or_radio = ($input->type == 'fieldCheckbox' || $input->type == 'fieldRadio');
+        if ($is_check_or_radio) {
+            $has_checkbox_or_radio = true;
+            echo '<div class="form-check">';
+
+            // Add form-check-input class
+            if (isset($input->params['attributes']['class'])) {
+                $input->params['attributes']['class'] .= ' form-check-input';
+            } else {
+                $input->params['attributes']['class'] = 'form-check-input';
+            }
+        } else {
+            // Add form-control class to text inputs and other form controls
+            if (in_array($input->type, ['fieldText', 'fieldPassword', 'fieldTextarea', 'fieldSelect'])) {
+                if (isset($input->params['attributes']['class'])) {
+                    $input->params['attributes']['class'] .= ' form-control';
+                } else {
+                    $input->params['attributes']['class'] = 'form-control';
+                }
+            }
+        }
+
+        call_user_func_array([$this->Form, $input->type], $input->params);
+
+        // Draw the form field's secondary label if checkbox or radio item
+        if ($is_check_or_radio && isset($input->label)) {
+            // Add form-check-label class
+            if (isset($input->label->params['attributes']['class'])) {
+                if (is_array($input->label->params['attributes']['class'])) {
+                    $input->label->params['attributes']['class'][] = 'form-check-label';
+                } else {
+                    $input->label->params['attributes']['class'] .= ' form-check-label';
+                }
+            } else {
+                $input->label->params['attributes']['class'] = 'form-check-label';
+            }
+
+            call_user_func_array([$this->Form, 'label'], $input->label->params);
+            echo '</div>';
+        }
+    }
+
+    foreach ($tooltips as $tooltip) { ?>
+            <span class="tooltip">
+                <?php $this->_('AppController.tooltip.text'); ?>
+                <div><?php echo isset($tooltip->params['message'])
+                    ? $this->Html->safe($tooltip->params['message'])
+                    : null; ?></div>
+            </span>
+                    <?php }
     ?>
-    <div class="button_row">
-        <?php
-        $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_whois.field_submit', true), ['class' => 'btn btn-primary float-right']);
-        ?>
     </div>
-    <?php
-    $this->Form->end();
-    ?>
+                    <?php
+    } ?>
+</div>
+    <?php $i++;}
+?>
+<div class="d-flex justify-content-end">
+    <?php $this->Form->fieldSubmit('save', $this->_('Opensrs.tab_whois.field_submit', true), [
+        'class' => 'btn btn-primary',
+    ]); ?>
+</div>
+    <?php $this->Form->end();
+?>

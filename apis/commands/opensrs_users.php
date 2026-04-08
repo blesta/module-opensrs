@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS User Management
  *
@@ -30,7 +31,7 @@ class OpensrsUsers
      *  -
      * @return OpensrsResponse The response object
      */
-    public function add(array $vars) : OpensrsResponse
+    public function add(array $vars): OpensrsResponse
     {
         return $this->api->submit('add', $vars, 'subuser');
     }
@@ -42,7 +43,7 @@ class OpensrsUsers
      *  -
      * @return OpensrsResponse The response object
      */
-    public function delete(array $vars) : OpensrsResponse
+    public function delete(array $vars): OpensrsResponse
     {
         return $this->api->submit('delete', $vars, 'subuser');
     }
@@ -54,7 +55,7 @@ class OpensrsUsers
      *  -
      * @return OpensrsResponse The response object
      */
-    public function get(array $vars) : OpensrsResponse
+    public function get(array $vars): OpensrsResponse
     {
         return $this->api->submit('get', $vars, 'subuser');
     }
@@ -66,7 +67,7 @@ class OpensrsUsers
      *  -
      * @return OpensrsResponse The response object
      */
-    public function modify(array $vars) : OpensrsResponse
+    public function modify(array $vars): OpensrsResponse
     {
         return $this->api->submit('modify', $vars, 'subuser');
     }

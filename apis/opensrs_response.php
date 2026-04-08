@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS API response handler
  *
@@ -29,7 +30,7 @@ class OpensrsResponse
 
         try {
             $this->xml = new SimpleXMLElement($this->raw);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             // Invalid response
         }
     }
@@ -39,7 +40,7 @@ class OpensrsResponse
      *
      * @return stdClass A stdClass object representing the CommandResponses, null if invalid response
      */
-    public function response() : ?object
+    public function response(): ?object
     {
         if ($this->xml && $this->xml instanceof SimpleXMLElement) {
             return $this->formatResponse($this->xml->body->data_block);
@@ -53,7 +54,7 @@ class OpensrsResponse
      *
      * @return string The status (OK = success, ERROR = error, null = invalid responses)
      */
-    public function status() : ?string
+    public function status(): ?string
     {
         if ($this->xml && $this->xml instanceof SimpleXMLElement) {
             return ($this->formatResponse($this->xml->body->data_block)->is_success ?? false) ? 'OK' : 'ERROR';
@@ -67,7 +68,7 @@ class OpensrsResponse
      *
      * @return stdClass A stdClass object representing the errors in the response, null if invalid response
      */
-    public function errors() : ?object
+    public function errors(): ?object
     {
         if ($this->xml && $this->xml instanceof SimpleXMLElement) {
             $error = 'Internal Server Error';
@@ -81,7 +82,7 @@ class OpensrsResponse
                 'response_code' => $this->formatResponse($this->xml->body->data_block)->response_code ?? 500
             ];
         }
-        
+
         return null;
     }
 
@@ -90,7 +91,7 @@ class OpensrsResponse
      *
      * @return string The raw response
      */
-    public function raw() : string
+    public function raw(): string
     {
         return $this->raw;
     }
@@ -101,7 +102,7 @@ class OpensrsResponse
      * @param mixed $data The data to convert to a stdClass object
      * @return stdClass $data in a stdClass object form
      */
-    private function formatResponse($data) : object
+    private function formatResponse($data): object
     {
         return (object) $this->castToArray($data);
     }
@@ -112,7 +113,7 @@ class OpensrsResponse
      * @param mixed $data The data to convert to an array
      * @return array $data in array form
      */
-    private function castToArray($data) : array
+    private function castToArray($data): array
     {
         $array = [];
 
@@ -124,11 +125,7 @@ class OpensrsResponse
                     $attributes = $entry->attributes();
                     $key = (string)$attributes['key'] ?? $i;
 
-                    if (!empty(trim((string) $entry)) || is_numeric(trim((string) $entry))) {
-                        $array[$key] = (string) $entry;
-                    } else {
-                        $array[$key] = $this->castToArray($entry);
-                    }
+                    $array[$key] = !empty(trim((string) $entry)) || is_numeric(trim((string) $entry)) ? (string) $entry : $this->castToArray($entry);
 
                     if (empty($array[$key]) && is_array($array[$key])) {
                         $array[$key] = null;
@@ -147,11 +144,7 @@ class OpensrsResponse
                     $attributes = $entry->attributes();
                     $key = (string)$attributes['key'] ?? $i;
 
-                    if (!empty(trim((string) $entry)) || is_numeric(trim((string) $entry))) {
-                        $array[$key] = (string) $entry;
-                    } else {
-                        $array[$key] = $this->castToArray($entry);
-                    }
+                    $array[$key] = !empty(trim((string) $entry)) || is_numeric(trim((string) $entry)) ? (string) $entry : $this->castToArray($entry);
 
                     if (empty($array[$key]) && is_array($array[$key])) {
                         $array[$key] = null;

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenSRS DNS Management
  *
@@ -30,7 +31,7 @@ class OpensrsDomainsDns
      *  -
      * @return OpensrsResponse The response object
      */
-    public function createDnsZone(array $vars) : OpensrsResponse
+    public function createDnsZone(array $vars): OpensrsResponse
     {
         return $this->api->submit('create_dns_zone', $vars);
     }
@@ -42,7 +43,7 @@ class OpensrsDomainsDns
      *  -
      * @return OpensrsResponse The response object
      */
-    public function deleteDnsZone(array $vars) : OpensrsResponse
+    public function deleteDnsZone(array $vars): OpensrsResponse
     {
         return $this->api->submit('delete_dns_zone', $vars);
     }
@@ -54,7 +55,7 @@ class OpensrsDomainsDns
      *  -
      * @return OpensrsResponse The response object
      */
-    public function forceDnsNameservers(array $vars) : OpensrsResponse
+    public function forceDnsNameservers(array $vars): OpensrsResponse
     {
         return $this->api->submit('force_dns_nameservers', $vars);
     }
@@ -66,7 +67,7 @@ class OpensrsDomainsDns
      *  -
      * @return OpensrsResponse The response object
      */
-    public function getDnsZone(array $vars) : OpensrsResponse
+    public function getDnsZone(array $vars): OpensrsResponse
     {
         return $this->api->submit('get_dns_zone', $vars);
     }
@@ -78,7 +79,7 @@ class OpensrsDomainsDns
      *  -
      * @return OpensrsResponse The response object
      */
-    public function resetDnsZone(array $vars) : OpensrsResponse
+    public function resetDnsZone(array $vars): OpensrsResponse
     {
         return $this->api->submit('reset_dns_zone', $vars);
     }
@@ -90,7 +91,7 @@ class OpensrsDomainsDns
      *  -
      * @return OpensrsResponse The response object
      */
-    public function setDnsZone(array $vars) : OpensrsResponse
+    public function setDnsZone(array $vars): OpensrsResponse
     {
         return $this->api->submit('set_dns_zone', $vars);
     }
