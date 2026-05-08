@@ -75,7 +75,7 @@ class Opensrs extends RegistrarModule
             Configure::get('Blesta.company_id') . DS . 'modules' . DS . 'opensrs' . DS
         );
 
-        $pricing = $cache ? unserialize(base64_decode($cache)) : [];
+        $pricing = $cache ? unserialize(base64_decode($cache), ['allowed_classes' => false]) : [];
 
 
         // Fetch pricing from the registrar
