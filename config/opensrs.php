@@ -758,7 +758,15 @@ Configure::set('Opensrs.tlds', [
     '.yt',
     '.za',
     '.zip',
-    '.zone'
+    '.zone',
+
+    // Second-level UK TLDs
+    '.plc.uk',
+    '.org.uk',
+    '.net.uk',
+    '.me.uk',
+    '.ltd.uk',
+    '.co.uk'
 ]);
 
 // Transfer fields
@@ -1084,6 +1092,11 @@ Configure::set('Opensrs.domain_fields.uk', [
         'type' => 'text'
     ]
 ]);
+Configure::set('Opensrs.domain_fields.co.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.org.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.me.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.ltd.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.plc.uk', Configure::get('Opensrs.domain_fields.uk'));
 
 // .ASIA
 Configure::set('Opensrs.domain_fields.asia', [
