@@ -1084,6 +1084,12 @@ Configure::set('Opensrs.domain_fields.uk', [
         'type' => 'text'
     ]
 ]);
+Configure::set('Opensrs.domain_fields.co.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.org.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.me.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.ltd.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.plc.uk', Configure::get('Opensrs.domain_fields.uk'));
+Configure::set('Opensrs.domain_fields.net.uk', Configure::get('Opensrs.domain_fields.uk'));
 
 // .ASIA
 Configure::set('Opensrs.domain_fields.asia', [
