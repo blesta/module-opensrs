@@ -2227,7 +2227,7 @@ class Opensrs extends RegistrarModule
         foreach ($domain_info['nameserver_list'] ?? [] as $nameserver) {
             $nameservers[] = [
                 'url' => $nameserver['name'] ?? '',
-                'ips' => [$nameserver['ipaddress'] ?? '']
+                'ips' => [$nameserver['ipaddress'] ?? gethostbyname($nameserver['name'] ?? '')]
             ];
         }
 
