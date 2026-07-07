@@ -411,10 +411,10 @@ class Opensrs extends RegistrarModule
 
         if (isset($vars['use_module']) && $vars['use_module'] == 'true') {
             // Set registration period
-            $vars['period'] = 1;
+            $fields['period'] = 1;
             foreach ($package->pricing as $pricing) {
                 if ($pricing->id == $vars['pricing_id']) {
-                    $vars['period'] = $pricing->term;
+                    $fields['period'] = $pricing->term;
                     break;
                 }
             }
@@ -1635,6 +1635,7 @@ class Opensrs extends RegistrarModule
         $params = [
             'domain' => $domain,
             'auto_renew' => 0,
+            'period' => 1,
             'reg_type' => isset($vars['auth_info']) ? 'transfer' : 'new',
             'reg_username' => 'usr' . ($client->id_value ?? $client->id ?? rand(10000, 99999)),
             'reg_password' => substr(base64_encode(md5($client->id_value)), 0, 15),
