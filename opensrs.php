@@ -968,11 +968,12 @@ class Opensrs extends RegistrarModule
         $tabs = [
             'tabWhois' => Language::_('Opensrs.tab_whois.title', true),
             'tabNameservers' => Language::_('Opensrs.tab_nameservers.title', true),
+            'tabDns' => Language::_('Opensrs.tab_dns.title', true),
             'tabSettings' => Language::_('Opensrs.tab_settings.title', true)
         ];
 
-        if ($this->featureServiceEnabled('dns_management', $service)) {
-            $tabs['tabDns'] = Language::_('Opensrs.tab_dns.title', true);
+        if (!$this->featureServiceEnabled('dns_management', $service)) {
+            unset($tabs['tabDns']);
         }
 
         return $tabs;
@@ -1004,17 +1005,18 @@ class Opensrs extends RegistrarModule
                 'name' => Language::_('Opensrs.tab_nameservers.title', true),
                 'icon' => 'fas fa-server'
             ],
+            'tabClientDns' => [
+                'name' => Language::_('Opensrs.tab_dns.title', true),
+                'icon' => 'fas fa-globe'
+            ],
             'tabClientSettings' => [
                 'name' => Language::_('Opensrs.tab_settings.title', true),
                 'icon' => 'fas fa-cog'
             ]
         ];
 
-        if ($this->featureServiceEnabled('dns_management', $service)) {
-            $tabs['tabClientDns'] = [
-                'name' => Language::_('Opensrs.tab_dns.title', true),
-                'icon' => 'fas fa-globe'
-            ];
+        if (!$this->featureServiceEnabled('dns_management', $service)) {
+            unset($tabs['tabClientDns']);
         }
 
         return $tabs;
@@ -1381,7 +1383,7 @@ class Opensrs extends RegistrarModule
                     $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
                     $this->processResponse($api, $zone_response);
 
-                    if ($zone_response->status() == 'OK') {
+                    if ($this->dnsZoneExists($zone_response)) {
                         $zone = $zone_response->response();
                         $records = $zone->attributes['records'] ?? [];
 
@@ -1427,7 +1429,7 @@ class Opensrs extends RegistrarModule
                     $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
                     $this->processResponse($api, $zone_response);
 
-                    if ($zone_response->status() == 'OK') {
+                    if ($this->dnsZoneExists($zone_response)) {
                         $zone = $zone_response->response();
                         $records = $zone->attributes['records'] ?? [];
 
@@ -1450,15 +1452,27 @@ class Opensrs extends RegistrarModule
                         'domain' => $fields->domain
                     ]);
                     $this->processResponse($api, $response);
+                } elseif ($post['action'] == 'enable_dns') {
+                    $response = $dns->createDnsZone([
+                        'domain' => $fields->domain,
+                        'records' => []
+                    ]);
+                    $this->processResponse($api, $response);
                 }
+            }
+
+            // Repopulate the form with the submitted values, if the request failed
+            if ($this->Input->errors()) {
+                $vars = (object) $post;
             }
         }
 
         // Fetch current zone records
         $zone_response = $dns->getDnsZone(['domain' => $fields->domain]);
-        $this->logRequest($api, $zone_response);
+        $this->processResponse($api, $zone_response);
+        $zone_enabled = $this->dnsZoneExists($zone_response);
         $records = [];
-        if ($zone_response->status() == 'OK') {
+        if ($zone_enabled) {
             $zone = $zone_response->response();
             $raw_records = $zone->attributes['records'] ?? [];
 
@@ -1490,6 +1504,7 @@ class Opensrs extends RegistrarModule
         }
 
         $this->view->set('records', $records);
+        $this->view->set('zone_enabled', $zone_enabled);
         $this->view->set('vars', $vars);
         $this->view->set('record_types', [
             'A' => 'A',
@@ -2067,6 +2082,23 @@ class Opensrs extends RegistrarModule
         $this->logRequest($api, $response);
 
         return $response->response()->is_success == '1';
+    }
+
+    /**
+     * Determines whether a DNS zone is defined for the domain of the given get_dns_zone response
+     *
+     * Opensrs returns a successful response when the domain has no zone, reporting it only
+     * through the response text, so the status of the response alone can not be used
+     *
+     * @param OpensrsResponse $response The response of a get_dns_zone request
+     * @return bool True if a DNS zone is defined for the domain, false otherwise
+     */
+    private function dnsZoneExists(OpensrsResponse $response)
+    {
+        $zone = $response->response();
+
+        return $response->status() == 'OK'
+            && stripos($zone->response_text ?? '', 'not found') === false;
     }
 
     /**

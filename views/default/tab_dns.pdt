@@ -47,9 +47,27 @@
 <?php } else { ?>
 <div class="card-body text-center text-muted py-5 mb-3">
     <i class="bi bi-globe" style="font-size: 3rem; opacity: 0.3;"></i>
-    <p class="mt-3 mb-0"><?php $this->_('Opensrs.tab_dns.no_records'); ?></p>
+    <p class="mt-3 mb-0">
+        <?php ($zone_enabled ?? false)
+            ? $this->_('Opensrs.tab_dns.no_records')
+            : $this->_('Opensrs.tab_dns.no_zone'); ?>
+    </p>
+    <?php if (!($zone_enabled ?? false)) { ?>
+    <div class="mt-3">
+        <?php
+        $this->Form->create();
+        $this->Form->fieldHidden('action', 'enable_dns');
+        $this->Form->fieldSubmit('enable_dns', $this->_('Opensrs.tab_dns.field_enable_dns', true), [
+            'class' => 'btn btn-primary',
+        ]);
+        $this->Form->end();
+        ?>
+    </div>
+    <?php } ?>
 </div>
 <?php } ?>
+
+<?php if ($zone_enabled ?? false) { ?>
 
 <h5><?php $this->_('Opensrs.tab_dns.add_record'); ?></h5>
 <?php $this->Form->create(); ?>
@@ -170,6 +188,7 @@
     'class' => 'btn btn-outline-danger',
 ]); ?>
 <?php $this->Form->end(); ?>
+<?php } ?>
 
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {

@@ -75,8 +75,10 @@ $lang['Opensrs.tab_dns.field_options'] = 'Options';
 $lang['Opensrs.tab_dns.field_add'] = 'Add Record';
 $lang['Opensrs.tab_dns.field_delete'] = 'Delete';
 $lang['Opensrs.tab_dns.field_reset'] = 'Reset DNS Zone';
+$lang['Opensrs.tab_dns.field_enable_dns'] = 'Enable DNS';
 $lang['Opensrs.tab_dns.add_record'] = 'Add DNS Record';
 $lang['Opensrs.tab_dns.no_records'] = 'There are no DNS records.';
+$lang['Opensrs.tab_dns.no_zone'] = 'DNS service is not enabled for this domain.';
 
 $lang['Opensrs.tab_settings.title'] = 'Settings';
 $lang['Opensrs.tab_settings.field_registrar_lock'] = 'Registrar Lock';
