@@ -1167,11 +1167,12 @@ class Opensrs extends RegistrarModule
             'tabWhois' => Language::_('Opensrs.tab_whois.title', true),
             'tabNameservers' => Language::_('Opensrs.tab_nameservers.title', true),
             'tabDns' => Language::_('Opensrs.tab_dns.title', true),
+            'tabUrlForwarding' => Language::_('Opensrs.tab_url_forwarding.title', true),
             'tabSettings' => Language::_('Opensrs.tab_settings.title', true)
         ];
 
         if (!$this->featureServiceEnabled('dns_management', $service)) {
-            unset($tabs['tabDns']);
+            unset($tabs['tabDns'], $tabs['tabUrlForwarding']);
         }
 
         return $tabs;
@@ -1207,6 +1208,10 @@ class Opensrs extends RegistrarModule
                 'name' => Language::_('Opensrs.tab_dns.title', true),
                 'icon' => 'fas fa-globe'
             ],
+            'tabClientUrlForwarding' => [
+                'name' => Language::_('Opensrs.tab_url_forwarding.title', true),
+                'icon' => 'fas fa-share'
+            ],
             'tabClientSettings' => [
                 'name' => Language::_('Opensrs.tab_settings.title', true),
                 'icon' => 'fas fa-cog'
@@ -1214,7 +1219,7 @@ class Opensrs extends RegistrarModule
         ];
 
         if (!$this->featureServiceEnabled('dns_management', $service)) {
-            unset($tabs['tabClientDns']);
+            unset($tabs['tabClientDns'], $tabs['tabClientUrlForwarding']);
         }
 
         return $tabs;
@@ -1338,6 +1343,41 @@ class Opensrs extends RegistrarModule
     public function tabClientDns($package, $service, array $get = null, array $post = null, array $files = null)
     {
         return $this->manageDns('tab_client_dns', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin URL Forwarding tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabUrlForwarding($package, $service, array $get = null, array $post = null, array $files = null)
+    {
+        return $this->manageUrlForwarding('tab_url_forwarding', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Client URL Forwarding tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabClientUrlForwarding(
+        $package,
+        $service,
+        array $get = null,
+        array $post = null,
+        array $files = null
+    ) {
+        return $this->manageUrlForwarding('tab_client_url_forwarding', $package, $service, $get, $post, $files);
     }
 
     /**
@@ -1712,6 +1752,114 @@ class Opensrs extends RegistrarModule
             'TXT' => 'TXT',
             'SRV' => 'SRV'
         ]);
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
+    }
+
+    /**
+     * Handle URL forwarding management
+     *
+     * @param string $view The view to use
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    private function manageUrlForwarding(
+        $view,
+        $package,
+        $service,
+        array $get = null,
+        array $post = null,
+        array $files = null
+    ) {
+        $this->view = new View($view, 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $row = $this->getModuleRow($package->module_row);
+        if (!$row) {
+            return '';
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $vars = new stdClass();
+        $fields = $this->serviceFieldsToObject($service->fields);
+        $forwarding = new OpensrsDomainsForwarding($api);
+
+        if (!empty($post)) {
+            if (isset($post['action'])) {
+                if ($post['action'] == 'set_forwarding') {
+                    $info_response = $forwarding->getDomainForwarding(['domain' => $fields->domain]);
+                    $this->logRequest($api, $info_response);
+
+                    if ($info_response->status() != 'OK') {
+                        // Domain forwarding must be enabled before records can be set
+                        $create_response = $forwarding->createDomainForwarding(['domain' => $fields->domain]);
+                        $this->logRequest($api, $create_response);
+                        $existing_records = [];
+                    } else {
+                        $info = $info_response->response();
+                        $existing_records = $info->attributes['forwarding'] ?? [];
+                    }
+
+                    $existing_records[] = [
+                        'subdomain' => $post['subdomain'] ?? '@',
+                        'destination_url' => $post['destination_url'] ?? '',
+                        'enabled' => isset($post['enabled']) ? 1 : 0,
+                        'masked' => isset($post['masked']) ? 1 : 0
+                    ];
+
+                    $response = $forwarding->setDomainForwarding([
+                        'domain' => $fields->domain,
+                        'forwarding' => $existing_records
+                    ]);
+                    $this->processResponse($api, $response);
+                } elseif ($post['action'] == 'delete_forwarding') {
+                    $info_response = $forwarding->getDomainForwarding(['domain' => $fields->domain]);
+                    $this->logRequest($api, $info_response);
+                    $existing_records = [];
+                    if ($info_response->status() == 'OK') {
+                        $info = $info_response->response();
+                        $existing_records = $info->attributes['forwarding'] ?? [];
+                    }
+
+                    $delete_index = (int)($post['record_index'] ?? -1);
+                    if (isset($existing_records[$delete_index])) {
+                        unset($existing_records[$delete_index]);
+                        $existing_records = array_values($existing_records);
+                    }
+
+                    $response = $forwarding->setDomainForwarding([
+                        'domain' => $fields->domain,
+                        'forwarding' => $existing_records
+                    ]);
+                    $this->processResponse($api, $response);
+                }
+            }
+        }
+
+        // Fetch current forwarding records
+        $forwarding_records = [];
+        $info_response = $forwarding->getDomainForwarding(['domain' => $fields->domain]);
+        $this->logRequest($api, $info_response);
+        if ($info_response->status() == 'OK') {
+            $info = $info_response->response();
+            $raw_records = $info->attributes['forwarding'] ?? [];
+            foreach ($raw_records as $index => $record) {
+                if (is_array($record)) {
+                    $record['record_index'] = $index;
+                    $forwarding_records[] = $record;
+                }
+            }
+        }
+
+        $this->view->set('forwarding_records', $forwarding_records);
+        $this->view->set('vars', $vars);
         $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
 
         return $this->view->fetch();

@@ -80,6 +80,19 @@ $lang['Opensrs.tab_dns.add_record'] = 'Add DNS Record';
 $lang['Opensrs.tab_dns.no_records'] = 'There are no DNS records.';
 $lang['Opensrs.tab_dns.no_zone'] = 'DNS service is not enabled for this domain.';
 
+$lang['Opensrs.tab_url_forwarding.title'] = 'URL Forwarding';
+$lang['Opensrs.tab_url_forwarding.field_subdomain'] = 'Subdomain';
+$lang['Opensrs.tab_url_forwarding.field_destination_url'] = 'Destination URL';
+$lang['Opensrs.tab_url_forwarding.field_enabled'] = 'Enabled';
+$lang['Opensrs.tab_url_forwarding.field_masked'] = 'Mask Destination URL';
+$lang['Opensrs.tab_url_forwarding.value_yes'] = 'Yes';
+$lang['Opensrs.tab_url_forwarding.value_no'] = 'No';
+$lang['Opensrs.tab_url_forwarding.field_add'] = 'Add Forwarding Rule';
+$lang['Opensrs.tab_url_forwarding.field_options'] = 'Options';
+$lang['Opensrs.tab_url_forwarding.field_delete'] = 'Delete';
+$lang['Opensrs.tab_url_forwarding.add_record'] = 'Add URL Forwarding Rule';
+$lang['Opensrs.tab_url_forwarding.no_records'] = 'There are no URL forwarding rules.';
+
 $lang['Opensrs.tab_settings.title'] = 'Settings';
 $lang['Opensrs.tab_settings.field_registrar_lock'] = 'Registrar Lock';
 $lang['Opensrs.tab_settings.field_registrar_lock_yes'] = 'Set the registrar lock. Recommended to prevent unauthorized transfer.';
