@@ -497,6 +497,204 @@ class Opensrs extends RegistrarModule
     }
 
     /**
+     * Cancels the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being canceled.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being canceled (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function cancelService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return null;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        $domains_provisioning = new OpensrsDomainsProvisioning($api);
+        $response = $domains_provisioning->modify([
+            'domain' => $fields->domain,
+            'data' => 'expire_action',
+            'affect_domains' => '0',
+            'auto_renew' => '0',
+            'let_expire' => '1'
+        ]);
+        $this->processResponse($api, $response);
+
+        return null;
+    }
+
+    /**
+     * Suspends the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being suspended.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being suspended (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function suspendService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return null;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        // Preserve the domain's current auto-renew state so it can be restored on unsuspend,
+        // rather than always reversing back to auto-renew when the service is unsuspended.
+        // If the lookup fails, the true prior state is unknown - don't record a guessed value,
+        // since a wrong guess could later force an unwanted renewal back on (see unsuspendService()).
+        $domain_info = $this->getDomainInfo($fields->domain, $package->module_row);
+        $known_state = isset($domain_info['auto_renew']) && isset($domain_info['let_expire']);
+        $auto_renew = $known_state ? (string)$domain_info['auto_renew'] : null;
+        $let_expire = $known_state ? (string)$domain_info['let_expire'] : null;
+
+        $domains_provisioning = new OpensrsDomainsProvisioning($api);
+        $response = $domains_provisioning->modify([
+            'domain' => $fields->domain,
+            'data' => 'expire_action',
+            'affect_domains' => '0',
+            'auto_renew' => '0',
+            'let_expire' => '1'
+        ]);
+        $this->processResponse($api, $response);
+
+        if (!$known_state) {
+            return null;
+        }
+
+        // Return the existing service fields along with the prior auto-renew state
+        $meta = $this->getServiceMeta($service, ['auto_renew', 'let_expire']);
+        $meta[] = ['key' => 'auto_renew', 'value' => $auto_renew, 'encrypted' => 0];
+        $meta[] = ['key' => 'let_expire', 'value' => $let_expire, 'encrypted' => 0];
+
+        return $meta;
+    }
+
+    /**
+     * Unsuspends the service on the remote server. Sets Input errors on failure,
+     * preventing the service from being unsuspended.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being unsuspended (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function unsuspendService($package, $service, $parent_package = null, $parent_service = null)
+    {
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return null;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        // Restore whatever auto-renew state was in effect before the domain was suspended
+        // (saved by suspendService), instead of unconditionally forcing renewal back on.
+        // If no prior state was recorded - either the lookup failed at suspend time, or this
+        // service was suspended before this fix existed - leave expire_action untouched rather
+        // than guessing, since a wrong guess could force an unwanted renewal on a domain the
+        // customer had deliberately set not to renew.
+        if (!isset($fields->auto_renew) || !isset($fields->let_expire)) {
+            return null;
+        }
+
+        $domains_provisioning = new OpensrsDomainsProvisioning($api);
+        $response = $domains_provisioning->modify([
+            'domain' => $fields->domain,
+            'data' => 'expire_action',
+            'affect_domains' => '0',
+            'auto_renew' => $fields->auto_renew,
+            'let_expire' => $fields->let_expire
+        ]);
+        $this->processResponse($api, $response);
+
+        // Return the existing service fields, the prior auto-renew state is stale once restored
+        return $this->getServiceMeta($service, ['auto_renew', 'let_expire']);
+    }
+
+    /**
+     * Edits the service on the remote server.
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $vars An array of user supplied info to satisfy the request
+     * @param stdClass $parent_package A stdClass object representing the parent
+     *  service's selected package (if the current service is an addon service)
+     * @param stdClass $parent_service A stdClass object representing the parent
+     *  service of the service being edited (if the current service is an addon service)
+     * @return mixed null to maintain the existing meta fields or a numerically
+     *  indexed array of meta fields to be stored for this service containing:
+     *  - key The key for this meta field
+     *  - value The value for this key
+     *  - encrypted Whether or not this field should be encrypted (default 0, not encrypted)
+     * @see Module::getModule()
+     * @see Module::getModuleRow()
+     */
+    public function editService($package, $service, array $vars = [], $parent_package = null, $parent_service = null)
+    {
+        return null;
+    }
+
+    /**
+     * Restores a domain in the redemption grace period
+     *
+     * @param string $domain The domain to restore
+     * @param int $module_row_id The ID of the module row to fetch for the current module
+     * @param array $vars A list of vars to submit with the restore request
+     * @return bool True if the domain was successfully restored, false otherwise
+     */
+    public function restoreDomain($domain, $module_row_id = null, array $vars = [])
+    {
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $domains = new OpensrsDomainsProvisioning($api);
+        $response = $domains->redeem(['domain' => $domain]);
+        $this->processResponse($api, $response);
+
+        return $response->status() == 'OK';
+    }
+
+    /**
      * Validates input data when attempting to add a package, returns the meta
      * data to save when adding a package. Performs any action required to add
      * the package on the remote server. Sets Input errors on failure,
@@ -2082,6 +2280,31 @@ class Opensrs extends RegistrarModule
         $this->logRequest($api, $response);
 
         return $response->response()->is_success == '1';
+    }
+
+    /**
+     * Builds the list of meta fields currently stored for the given service
+     *
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $exclude A list of field keys to exclude
+     * @return array A numerically indexed array of meta fields to be stored for this service
+     */
+    private function getServiceMeta($service, array $exclude = [])
+    {
+        $meta = [];
+        foreach ($service->fields ?? [] as $service_field) {
+            if (in_array($service_field->key, $exclude)) {
+                continue;
+            }
+
+            $meta[] = [
+                'key' => $service_field->key,
+                'value' => $service_field->value,
+                'encrypted' => $service_field->encrypted ?? 0
+            ];
+        }
+
+        return $meta;
     }
 
     /**
