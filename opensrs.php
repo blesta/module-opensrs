@@ -588,10 +588,12 @@ class Opensrs extends RegistrarModule
             return null;
         }
 
-        return [
-            ['key' => 'auto_renew', 'value' => $auto_renew, 'encrypted' => 0],
-            ['key' => 'let_expire', 'value' => $let_expire, 'encrypted' => 0]
-        ];
+        // Return the existing service fields along with the prior auto-renew state
+        $meta = $this->getServiceMeta($service, ['auto_renew', 'let_expire']);
+        $meta[] = ['key' => 'auto_renew', 'value' => $auto_renew, 'encrypted' => 0];
+        $meta[] = ['key' => 'let_expire', 'value' => $let_expire, 'encrypted' => 0];
+
+        return $meta;
     }
 
     /**
@@ -642,7 +644,8 @@ class Opensrs extends RegistrarModule
         ]);
         $this->processResponse($api, $response);
 
-        return null;
+        // Return the existing service fields, the prior auto-renew state is stale once restored
+        return $this->getServiceMeta($service, ['auto_renew', 'let_expire']);
     }
 
     /**
@@ -2057,6 +2060,31 @@ class Opensrs extends RegistrarModule
         $this->logRequest($api, $response);
 
         return $response->response()->is_success == '1';
+    }
+
+    /**
+     * Builds the list of meta fields currently stored for the given service
+     *
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $exclude A list of field keys to exclude
+     * @return array A numerically indexed array of meta fields to be stored for this service
+     */
+    private function getServiceMeta($service, array $exclude = [])
+    {
+        $meta = [];
+        foreach ($service->fields ?? [] as $service_field) {
+            if (in_array($service_field->key, $exclude)) {
+                continue;
+            }
+
+            $meta[] = [
+                'key' => $service_field->key,
+                'value' => $service_field->value,
+                'encrypted' => $service_field->encrypted ?? 0
+            ];
+        }
+
+        return $meta;
     }
 
     /**
