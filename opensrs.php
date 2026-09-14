@@ -1167,15 +1167,12 @@ class Opensrs extends RegistrarModule
             'tabWhois' => Language::_('Opensrs.tab_whois.title', true),
             'tabNameservers' => Language::_('Opensrs.tab_nameservers.title', true),
             'tabDns' => Language::_('Opensrs.tab_dns.title', true),
+            'tabUrlForwarding' => Language::_('Opensrs.tab_url_forwarding.title', true),
             'tabSettings' => Language::_('Opensrs.tab_settings.title', true)
         ];
 
         if (!$this->featureServiceEnabled('dns_management', $service)) {
-            unset($tabs['tabDns']);
-        }
-
-        if ($this->featureServiceEnabled('dns_management', $service)) {
-            $tabs['tabUrlForwarding'] = Language::_('Opensrs.tab_url_forwarding.title', true);
+            unset($tabs['tabDns'], $tabs['tabUrlForwarding']);
         }
 
         return $tabs;
@@ -1211,6 +1208,10 @@ class Opensrs extends RegistrarModule
                 'name' => Language::_('Opensrs.tab_dns.title', true),
                 'icon' => 'fas fa-globe'
             ],
+            'tabClientUrlForwarding' => [
+                'name' => Language::_('Opensrs.tab_url_forwarding.title', true),
+                'icon' => 'fas fa-share'
+            ],
             'tabClientSettings' => [
                 'name' => Language::_('Opensrs.tab_settings.title', true),
                 'icon' => 'fas fa-cog'
@@ -1218,14 +1219,7 @@ class Opensrs extends RegistrarModule
         ];
 
         if (!$this->featureServiceEnabled('dns_management', $service)) {
-            unset($tabs['tabClientDns']);
-        }
-
-        if ($this->featureServiceEnabled('dns_management', $service)) {
-            $tabs['tabClientUrlForwarding'] = [
-                'name' => Language::_('Opensrs.tab_url_forwarding.title', true),
-                'icon' => 'fas fa-share'
-            ];
+            unset($tabs['tabClientDns'], $tabs['tabClientUrlForwarding']);
         }
 
         return $tabs;
@@ -2476,27 +2470,6 @@ class Opensrs extends RegistrarModule
 
         return $response->status() == 'OK'
             && stripos($zone->response_text ?? '', 'not found') === false;
-    }
-
-    /**
-     * Fetches the module row, setting a user-friendly error if it cannot be found
-     *
-     * @param int $module_row_id The ID of the module row to fetch
-     * @return mixed A stdClass object representing the module row, or null if not found
-     */
-    private function getModuleRowOrFail($module_row_id)
-    {
-        $row = $this->getModuleRow($module_row_id);
-
-        if (!$row) {
-            $this->Input->setErrors(['errors' => [
-                Language::_('Opensrs.!error.module_row.missing', true)
-            ]]);
-
-            return null;
-        }
-
-        return $row;
     }
 
     /**
