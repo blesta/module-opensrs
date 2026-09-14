@@ -42,7 +42,7 @@
             <div class="alert alert-info"><?php $this->_('Opensrs.tab_url_forwarding.no_records'); ?></div>
             <?php } ?>
 
-            <h4><?php $this->_('Opensrs.tab_url_forwarding.add_record'); ?></h4>
+            <h4 class="mt-4"><?php $this->_('Opensrs.tab_url_forwarding.add_record'); ?></h4>
             <?php
             $this->Form->create();
             $this->Form->fieldHidden('action', 'set_forwarding');
