@@ -26,7 +26,7 @@ $this->Widget->create($this->_('Opensrs.edit_row.box_title', true));
     <label for="key" class="form-label">
         <?php $this->_('Opensrs.row_meta.key'); ?>
     </label>
-    <?php $this->Form->fieldText('key', $vars->key ?? null, ['id' => 'key', 'class' => 'form-control']); ?>
+    <?php $this->Form->fieldPassword('key', ['id' => 'key', 'class' => 'form-control', 'value' => $vars->key ?? null]); ?>
 </div>
 
 <div class="mb-3">

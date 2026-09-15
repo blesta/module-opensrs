@@ -220,9 +220,9 @@ $lang['Opensrs.domain.id_type.passport'] = 'Passport/ Citizenship ID';
 $lang['Opensrs.domain.id_number'] = 'Identity Number';
 
 // .FR domain fields
-$lang['Opensrs.domain.registrant_type'] = 'Legal Type';
-$lang['Opensrs.domain.registrant_type.individual'] = 'Individual';
-$lang['Opensrs.domain.registrant_type.organization'] = 'Company';
+$lang['Opensrs.domain.fr_registrant_type'] = 'Legal Type';
+$lang['Opensrs.domain.fr_registrant_type.individual'] = 'Individual';
+$lang['Opensrs.domain.fr_registrant_type.organization'] = 'Company';
 $lang['Opensrs.domain.registrant_vat_id'] = 'VAT ID';
 $lang['Opensrs.domain.siren_siret'] = 'SIREN/SIRET Number';
 $lang['Opensrs.domain.trademark_number'] = 'Trademark Number';
