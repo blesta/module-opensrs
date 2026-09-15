@@ -59,6 +59,40 @@ $lang['Opensrs.tab_nameservers.title'] = 'Name Servers';
 $lang['Opensrs.tab_nameserver.field_ns'] = 'Name Server %1$s'; // %1$s is the name server number
 $lang['Opensrs.tab_nameservers.field_submit'] = 'Update Name Servers';
 
+$lang['Opensrs.tab_dns.title'] = 'DNS Records';
+$lang['Opensrs.tab_dns.field_type'] = 'Type';
+$lang['Opensrs.tab_dns.field_subdomain'] = 'Host';
+$lang['Opensrs.tab_dns.field_value'] = 'Value';
+$lang['Opensrs.tab_dns.field_ip_address'] = 'IPv4 Address';
+$lang['Opensrs.tab_dns.field_ipv6_address'] = 'IPv6 Address';
+$lang['Opensrs.tab_dns.field_hostname'] = 'Hostname';
+$lang['Opensrs.tab_dns.field_text'] = 'Text';
+$lang['Opensrs.tab_dns.field_priority'] = 'Priority';
+$lang['Opensrs.tab_dns.field_weight'] = 'Weight';
+$lang['Opensrs.tab_dns.field_port'] = 'Port';
+$lang['Opensrs.tab_dns.field_ttl'] = 'TTL';
+$lang['Opensrs.tab_dns.field_options'] = 'Options';
+$lang['Opensrs.tab_dns.field_add'] = 'Add Record';
+$lang['Opensrs.tab_dns.field_delete'] = 'Delete';
+$lang['Opensrs.tab_dns.field_reset'] = 'Reset DNS Zone';
+$lang['Opensrs.tab_dns.field_enable_dns'] = 'Enable DNS';
+$lang['Opensrs.tab_dns.add_record'] = 'Add DNS Record';
+$lang['Opensrs.tab_dns.no_records'] = 'There are no DNS records.';
+$lang['Opensrs.tab_dns.no_zone'] = 'DNS service is not enabled for this domain.';
+
+$lang['Opensrs.tab_url_forwarding.title'] = 'URL Forwarding';
+$lang['Opensrs.tab_url_forwarding.field_subdomain'] = 'Subdomain';
+$lang['Opensrs.tab_url_forwarding.field_destination_url'] = 'Destination URL';
+$lang['Opensrs.tab_url_forwarding.field_enabled'] = 'Enabled';
+$lang['Opensrs.tab_url_forwarding.field_masked'] = 'Mask Destination URL';
+$lang['Opensrs.tab_url_forwarding.value_yes'] = 'Yes';
+$lang['Opensrs.tab_url_forwarding.value_no'] = 'No';
+$lang['Opensrs.tab_url_forwarding.field_add'] = 'Add Forwarding Rule';
+$lang['Opensrs.tab_url_forwarding.field_options'] = 'Options';
+$lang['Opensrs.tab_url_forwarding.field_delete'] = 'Delete';
+$lang['Opensrs.tab_url_forwarding.add_record'] = 'Add URL Forwarding Rule';
+$lang['Opensrs.tab_url_forwarding.no_records'] = 'There are no URL forwarding rules.';
+
 $lang['Opensrs.tab_settings.title'] = 'Settings';
 $lang['Opensrs.tab_settings.field_registrar_lock'] = 'Registrar Lock';
 $lang['Opensrs.tab_settings.field_registrar_lock_yes'] = 'Set the registrar lock. Recommended to prevent unauthorized transfer.';
@@ -69,6 +103,17 @@ $lang['Opensrs.tab_settings.field_whois_privacy_state_no'] = 'Disabled';
 $lang['Opensrs.tab_settings.field_epp_code'] = 'EPP Code';
 $lang['Opensrs.tab_settings.field_request_epp'] = 'Request EPP Code/Transfer Key';
 $lang['Opensrs.tab_settings.field_submit'] = 'Update Settings';
+
+$lang['Opensrs.tab_dnssec.title'] = 'DNSSEC';
+$lang['Opensrs.tab_dnssec.field_key_tag'] = 'Key Tag';
+$lang['Opensrs.tab_dnssec.field_algorithm'] = 'Algorithm';
+$lang['Opensrs.tab_dnssec.field_digest_type'] = 'Digest Type';
+$lang['Opensrs.tab_dnssec.field_digest'] = 'Digest';
+$lang['Opensrs.tab_dnssec.field_options'] = 'Options';
+$lang['Opensrs.tab_dnssec.field_delete'] = 'Delete';
+$lang['Opensrs.tab_dnssec.field_add'] = 'Add DS Record';
+$lang['Opensrs.tab_dnssec.add_record'] = 'Add DS Record';
+$lang['Opensrs.tab_dnssec.no_records'] = 'There are no DNSSEC DS records.';
 
 // Errors
 $lang['Opensrs.!error.user.valid'] = 'Please enter a user';
@@ -221,9 +266,9 @@ $lang['Opensrs.domain.id_type.passport'] = 'Passport/ Citizenship ID';
 $lang['Opensrs.domain.id_number'] = 'Identity Number';
 
 // .FR domain fields
-$lang['Opensrs.domain.registrant_type'] = 'Legal Type';
-$lang['Opensrs.domain.registrant_type.individual'] = 'Individual';
-$lang['Opensrs.domain.registrant_type.organization'] = 'Company';
+$lang['Opensrs.domain.fr_registrant_type'] = 'Legal Type';
+$lang['Opensrs.domain.fr_registrant_type.individual'] = 'Individual';
+$lang['Opensrs.domain.fr_registrant_type.organization'] = 'Company';
 $lang['Opensrs.domain.registrant_vat_id'] = 'VAT ID';
 $lang['Opensrs.domain.siren_siret'] = 'SIREN/SIRET Number';
 $lang['Opensrs.domain.trademark_number'] = 'Trademark Number';

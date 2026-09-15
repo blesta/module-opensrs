@@ -10,6 +10,10 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_provisioning.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_transfer.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_forwarding.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_dnssec.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_ssl.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_users.php';
 
@@ -188,7 +192,7 @@ class OpensrsApi
             if (is_array($value)) {
                 $assoc = $dt_assoc->addChild('item');
                 $assoc->addAttribute('key', $key);
-                $assoc = $assoc->addChild(isset($value[0]) ? 'dt_array' : 'dt_assoc');
+                $assoc = $assoc->addChild((empty($value) || isset($value[0])) ? 'dt_array' : 'dt_assoc');
 
                 $this->buildRecursiveAttributes($assoc, $value);
             } else {
