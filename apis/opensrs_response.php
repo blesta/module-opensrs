@@ -54,13 +54,13 @@ class OpensrsResponse
      *
      * @return string The status (OK = success, ERROR = error, null = invalid responses)
      */
-    public function status(): ?string
+    public function status(): string
     {
         if ($this->xml && $this->xml instanceof SimpleXMLElement) {
             return ($this->formatResponse($this->xml->body->data_block)->is_success ?? false) ? 'OK' : 'ERROR';
         }
 
-        return null;
+        return 'ERROR';
     }
 
     /**
@@ -71,15 +71,15 @@ class OpensrsResponse
     public function errors(): ?object
     {
         if ($this->xml && $this->xml instanceof SimpleXMLElement) {
-            $error = 'Internal Server Error';
+            $data = $this->formatResponse($this->xml->body->data_block);
 
-            $error_msg = $this->formatResponse($this->xml->body->data_block)->attributes['error']
-                ?? $this->formatResponse($this->xml->body->data_block)->response_text
-                ?? $error;
+            $error_msg = $data->attributes['error']
+                ?? $data->response_text
+                ?? 'Internal Server Error';
 
             return (object)[
                 'response_text' => $error_msg,
-                'response_code' => $this->formatResponse($this->xml->body->data_block)->response_code ?? 500
+                'response_code' => $data->response_code ?? 500
             ];
         }
 
@@ -93,7 +93,7 @@ class OpensrsResponse
      */
     public function raw(): string
     {
-        return $this->raw;
+        return $this->raw ?? '';
     }
 
     /**
