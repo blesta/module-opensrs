@@ -103,9 +103,7 @@ class Opensrs extends RegistrarModule
             if ($register_response->status() != 'OK') {
                 continue;
             }
-            foreach (range(1, 10) as $years) {
-                $pricing[$tld]['register'] = $register_response->response();
-            }
+            $pricing[$tld]['register'] = $register_response->response();
 
             // Set the renewal prices
             $renew_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'renewal']));
@@ -113,9 +111,7 @@ class Opensrs extends RegistrarModule
             if ($renew_response->status() != 'OK') {
                 continue;
             }
-            foreach (range(1, 10) as $years) {
-                $pricing[$tld]['renew'] = $renew_response->response();
-            }
+            $pricing[$tld]['renew'] = $renew_response->response();
 
             // Set the transfer prices
             $transfer_response = $domains->getPrice(array_merge($vars, ['reg_type' => 'transfer']));
@@ -123,9 +119,7 @@ class Opensrs extends RegistrarModule
             if ($transfer_response->status() != 'OK') {
                 continue;
             }
-            foreach (range(1, 10) as $years) {
-                $pricing[$tld]['transfer'] = $transfer_response->response();
-            }
+            $pricing[$tld]['transfer'] = $transfer_response->response();
         }
         unset($tld);
 
@@ -288,7 +282,7 @@ class Opensrs extends RegistrarModule
                 'tld_data[registrant_extra_info][trademark_number]'
             ];
 
-            if ($vars['tld_data']['registrant_extra_info']['registrant_type'] == 'organization') {
+            if ($vars['tld_data']['registrant_extra_info']['registrant_type'] == 'individual') {
                 foreach ($company_fields as $field) {
                     unset($rules[$field]);
                 }
@@ -1333,8 +1327,24 @@ class Opensrs extends RegistrarModule
      */
     public function checkTransferAvailability($domain, $module_row_id = null)
     {
-        // Prevent users from transferring an unregistered domain
-        return !$this->checkAvailability($domain, $module_row_id);
+        $row = $this->getModuleRow($module_row_id);
+        if (!$row) {
+            return false;
+        }
+        $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
+
+        $transfers = new OpensrsDomainsTransfer($api);
+        $result = $transfers->checkTransfer(['domain' => $domain]);
+        $this->logRequest($api, $result);
+
+        if ($result->status() != 'OK') {
+            // Fall back to inverse availability check
+            return !$this->checkAvailability($domain, $module_row_id);
+        }
+
+        $response = $result->response();
+
+        return ($response->attributes['transferrable'] ?? '0') == '1';
     }
 
     /**
