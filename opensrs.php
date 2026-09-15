@@ -1913,8 +1913,14 @@ class Opensrs extends RegistrarModule
         // Set errors, if any
         if ($response->status() != 'OK') {
             $error_obj = $response->errors();
-            $errors = $error_obj->response_text ?? 'An unknown error occurred';
-            $this->Input->setErrors(['errors' => [$errors]]);
+            $errors = $error_obj->response_text ?? null;
+
+            if (is_null($errors)) {
+                $errors = $this->getCommonError('general');
+            } else {
+                $errors = ['errors' => [$errors]];
+            }
+            $this->Input->setErrors($errors);
         }
     }
 
