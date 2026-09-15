@@ -104,6 +104,17 @@ $lang['Opensrs.tab_settings.field_epp_code'] = 'EPP Code';
 $lang['Opensrs.tab_settings.field_request_epp'] = 'Request EPP Code/Transfer Key';
 $lang['Opensrs.tab_settings.field_submit'] = 'Update Settings';
 
+$lang['Opensrs.tab_dnssec.title'] = 'DNSSEC';
+$lang['Opensrs.tab_dnssec.field_key_tag'] = 'Key Tag';
+$lang['Opensrs.tab_dnssec.field_algorithm'] = 'Algorithm';
+$lang['Opensrs.tab_dnssec.field_digest_type'] = 'Digest Type';
+$lang['Opensrs.tab_dnssec.field_digest'] = 'Digest';
+$lang['Opensrs.tab_dnssec.field_options'] = 'Options';
+$lang['Opensrs.tab_dnssec.field_delete'] = 'Delete';
+$lang['Opensrs.tab_dnssec.field_add'] = 'Add DS Record';
+$lang['Opensrs.tab_dnssec.add_record'] = 'Add DS Record';
+$lang['Opensrs.tab_dnssec.no_records'] = 'There are no DNSSEC DS records.';
+
 // Errors
 $lang['Opensrs.!error.user.valid'] = 'Please enter a user';
 $lang['Opensrs.!error.key.valid'] = 'Please enter a key';
