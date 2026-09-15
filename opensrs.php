@@ -79,7 +79,10 @@ class Opensrs extends RegistrarModule
 
 
         // Fetch pricing from the registrar
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return [];
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
         $domains = new OpensrsDomains($api);
 
@@ -1243,7 +1246,10 @@ class Opensrs extends RegistrarModule
         // Load the helpers required for this view
         Loader::loadHelpers($this, ['Form', 'Html']);
 
-        $row = $this->getModuleRow($package->module_row);
+        $row = $this->getModuleRowOrFail($package->module_row);
+        if (!$row) {
+            return '';
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $vars = new stdClass();
@@ -1307,7 +1313,10 @@ class Opensrs extends RegistrarModule
      */
     public function checkAvailability($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1373,7 +1382,10 @@ class Opensrs extends RegistrarModule
      */
     public function getDomainContacts($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return [];
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1422,7 +1434,10 @@ class Opensrs extends RegistrarModule
      */
     public function setDomainContacts($domain, array $vars = [], $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains_provisioning = new OpensrsDomainsProvisioning($api);
@@ -1458,7 +1473,10 @@ class Opensrs extends RegistrarModule
      */
     public function getDomainInfo($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return [];
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1485,7 +1503,10 @@ class Opensrs extends RegistrarModule
      */
     public function getDomainIsLocked($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1512,7 +1533,10 @@ class Opensrs extends RegistrarModule
      */
     private function getDomainIsPrivate($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1565,10 +1589,13 @@ class Opensrs extends RegistrarModule
      */
     public function setDomainNameservers($domain, $module_row_id = null, array $vars = [])
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
-        $domains_provisioning = new OpensrsDomainsNs($api);
+        $domains_ns = new OpensrsDomainsNs($api);
 
         // Remove empty nameservers
         foreach ($vars as $key => $ns) {
@@ -1578,7 +1605,7 @@ class Opensrs extends RegistrarModule
         }
 
         // Update domain
-        $response = $domains_provisioning->advancedUpdateNameserver([
+        $response = $domains_ns->advancedUpdateNameserver([
             'domain' => $domain,
             'op_type' => 'assign',
             'assign_ns' => array_values($vars)
@@ -1597,7 +1624,10 @@ class Opensrs extends RegistrarModule
      */
     public function lockDomain($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains_provisioning = new OpensrsDomainsProvisioning($api);
@@ -1623,7 +1653,10 @@ class Opensrs extends RegistrarModule
      */
     public function unlockDomain($domain, $module_row_id = null)
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains_provisioning = new OpensrsDomainsProvisioning($api);
@@ -1652,7 +1685,10 @@ class Opensrs extends RegistrarModule
      */
     public function registerDomain($domain, $module_row_id = null, array $vars = [])
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         // Set all whois info from client
@@ -1726,7 +1762,10 @@ class Opensrs extends RegistrarModule
      */
     public function renewDomain($domain, $module_row_id = null, array $vars = [])
     {
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $params = [
@@ -1759,7 +1798,10 @@ class Opensrs extends RegistrarModule
         $domain = $this->getServiceDomain($service);
         $module_row_id = $service->module_row_id ?? null;
 
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
@@ -1793,7 +1835,10 @@ class Opensrs extends RegistrarModule
         $domain = $this->getServiceDomain($service);
         $module_row_id = $service->module_row_id ?? null;
 
-        $row = $this->getModuleRow($module_row_id);
+        $row = $this->getModuleRowOrFail($module_row_id);
+        if (!$row) {
+            return false;
+        }
         $api = $this->getApi($row->meta->user, $row->meta->key, $row->meta->sandbox == 'true');
 
         $domains = new OpensrsDomains($api);
