@@ -420,15 +420,20 @@ class Opensrs extends RegistrarModule
             }
 
             // Set nameservers
-            $this->setDomainNameservers($vars['domain'], $package->module_row, [
+            $this->setDomainNameservers($vars['domain'], $package->module_row, array_filter([
                 $fields['nameserver_list'][0]['name'] ?? '',
                 $fields['nameserver_list'][1]['name'] ?? '',
                 $fields['nameserver_list'][2]['name'] ?? '',
                 $fields['nameserver_list'][3]['name'] ?? '',
-            ]);
+            ]));
 
-            // Ignore nameserver errors
-            $this->Input->setErrors([]);
+            // Clear nameserver errors only (registration already succeeded)
+            if ($this->Input->errors()) {
+                $errors = $this->Input->errors();
+                if (isset($errors['errors']) && count($errors) === 1) {
+                    $this->Input->setErrors([]);
+                }
+            }
 
             return [['key' => 'domain', 'value' => $vars['domain'], 'encrypted' => 0]];
         }
@@ -2105,6 +2110,10 @@ class Opensrs extends RegistrarModule
             'type' => 'all_info'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return [];
+        }
         $response = $response->response();
 
         $contacts = $response->attributes['contact_set'] ?? [];
@@ -2186,6 +2195,10 @@ class Opensrs extends RegistrarModule
             'type' => 'all_info'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return [];
+        }
         $response = $response->response();
 
         return $response->attributes ?? [];
@@ -2209,9 +2222,13 @@ class Opensrs extends RegistrarModule
             'type' => 'status'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return false;
+        }
         $response = $response->response();
 
-        return $response->attributes['lock_state'] == '1';
+        return ($response->attributes['lock_state'] ?? '0') == '1';
     }
 
     /**
@@ -2232,9 +2249,13 @@ class Opensrs extends RegistrarModule
             'type' => 'whois_privacy_state'
         ]);
         $this->processResponse($api, $response);
+
+        if ($response->status() != 'OK') {
+            return false;
+        }
         $response = $response->response();
 
-        return $response->attributes['state'] == 'enabled';
+        return ($response->attributes['state'] ?? 'disabled') == 'enabled';
     }
 
     /**
@@ -2252,10 +2273,10 @@ class Opensrs extends RegistrarModule
         $domain_info = $this->getDomainInfo($domain, $module_row_id);
 
         $nameservers = [];
-        foreach ($domain_info['nameserver_list'] as $nameserver) {
+        foreach ($domain_info['nameserver_list'] ?? [] as $nameserver) {
             $nameservers[] = [
                 'url' => $nameserver['name'] ?? '',
-                'ips' => [$nameserver['ipaddress'] ?? gethostbyname($nameserver['name'] ?? '')]
+                'ips' => [$nameserver['ipaddress'] ?? '']
             ];
         }
 
@@ -2692,8 +2713,15 @@ class Opensrs extends RegistrarModule
 
         // Set errors, if any
         if ($response->status() != 'OK') {
-            $errors = $response->errors()->response_text ?? '';
-            $this->Input->setErrors(['errors' => [$errors]]);
+            $error_obj = $response->errors();
+            $errors = $error_obj->response_text ?? null;
+
+            if (is_null($errors)) {
+                $errors = $this->getCommonError('general');
+            } else {
+                $errors = ['errors' => [$errors]];
+            }
+            $this->Input->setErrors($errors);
         }
     }
 
