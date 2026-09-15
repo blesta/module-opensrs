@@ -1865,8 +1865,7 @@ class Opensrs extends RegistrarModule
                     $this->processResponse($api, $response);
                 } elseif ($post['action'] == 'enable_dns') {
                     $response = $dns->createDnsZone([
-                        'domain' => $fields->domain,
-                        'records' => []
+                        'domain' => $fields->domain
                     ]);
                     $this->processResponse($api, $response);
                 }
