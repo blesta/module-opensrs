@@ -1422,7 +1422,7 @@ class Opensrs extends RegistrarModule
         $contact_set = [];
         foreach ($vars as $contact) {
             $contact['phone'] = $this->formatPhone($contact['phone'], $contact['country']);
-            $contact['postal_code'] = $contact['zip'] ?? '00000';
+            $contact['postal_code'] = $contact['postal_code'] ?? $contact['zip'] ?? '00000';
             $contact_set[$contact['external_id'] ?? 'owner'] = $contact;
         }
 
