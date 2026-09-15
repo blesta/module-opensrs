@@ -1698,6 +1698,11 @@ class Opensrs extends RegistrarModule
                     $this->processResponse($api, $response);
                 }
             }
+
+            // Repopulate the form with the submitted values, if the request failed
+            if ($this->Input->errors()) {
+                $vars = (object) $post;
+            }
         }
 
         // Fetch current DS records
