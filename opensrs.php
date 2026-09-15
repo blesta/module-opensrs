@@ -354,12 +354,18 @@ class Opensrs extends RegistrarModule
             Loader::loadModels($this, ['Contacts']);
         }
 
-        $client = $this->Clients->get($vars['client_id']);
+        $client = $this->Clients->get($vars['client_id'] ?? null);
         if ($client) {
             $contact_numbers = $this->Contacts->getNumbers($client->contact_id);
+        } else {
+            $contact_numbers = [];
         }
 
         foreach ($whois_fields as $key => $value) {
+            if (!$client) {
+                $vars[$key] = 'NA';
+                continue;
+            }
             if (str_contains($key, 'first_name')) {
                 $vars[$key] = $client->first_name;
             } elseif (str_contains($key, 'last_name')) {
@@ -1579,7 +1585,7 @@ class Opensrs extends RegistrarModule
 
         if (!empty($post)) {
             // Set domain status
-            if ($post['registrar_lock'] == 'true') {
+            if (($post['registrar_lock'] ?? 'false') == 'true') {
                 $this->lockDomain($fields->domain, $package->module_row);
             } else {
                 $this->unlockDomain($fields->domain, $package->module_row);
@@ -1591,7 +1597,7 @@ class Opensrs extends RegistrarModule
                 'domain' => $fields->domain,
                 'data' => 'whois_privacy_state',
                 'affect_domains' => '0',
-                'state' => $post['whois_privacy_state'] == 'true' ? 'Y' : 'N'
+                'state' => ($post['whois_privacy_state'] ?? 'false') == 'true' ? 'Y' : 'N'
             ]);
             $this->processResponse($api, $response);
 
@@ -2432,7 +2438,7 @@ class Opensrs extends RegistrarModule
             'auto_renew' => 0,
             'reg_type' => isset($vars['auth_info']) ? 'transfer' : 'new',
             'reg_username' => 'usr' . ($client->id_value ?? $client->id ?? rand(10000, 99999)),
-            'reg_password' => substr(base64_encode(md5($client->id_value)), 0, 15),
+            'reg_password' => substr(bin2hex(random_bytes(10)), 0, 15),
             'handle' => 'process'
         ];
         $fields = array_merge($params, $vars);
