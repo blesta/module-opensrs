@@ -2666,12 +2666,20 @@ class Opensrs extends RegistrarModule
      */
     public function validateConnection($key, $user, $sandbox)
     {
-        $api = $this->getApi($user, $key, $sandbox == 'true');
-        $domains = new OpensrsDomains($api);
-        $response = $domains->lookup(['domain' => 'blesta.com']);
-        $this->logRequest($api, $response);
+        try {
+            $api = $this->getApi($user, $key, $sandbox == 'true');
+            $domains = new OpensrsDomains($api);
+            $response = $domains->lookup(['domain' => 'blesta.com']);
+            $this->logRequest($api, $response);
 
-        return $response->response()->is_success == '1';
+            if ($response->status() != 'OK') {
+                return false;
+            }
+
+            return ($response->response()->is_success ?? '0') == '1';
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
     /**
