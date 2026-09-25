@@ -1184,7 +1184,23 @@ class Opensrs extends RegistrarModule
             unset($tabs['tabDns'], $tabs['tabUrlForwarding'], $tabs['tabDnssec']);
         }
 
+        // Only canceled domains can be restored
+        if (($service->status ?? null) == 'canceled') {
+            $tabs['tabRestore'] = Language::_('Opensrs.tab_restore.title', true);
+        }
+
         return $tabs;
+    }
+
+    /**
+     * Returns the admin tabs that remain available when managing a canceled service
+     *
+     * @param stdClass $service A stdClass object representing the service
+     * @return array A list of tab method names available for canceled services
+     */
+    public function getAdminCanceledServiceTabs($service)
+    {
+        return ['tabRestore'];
     }
 
     /**
@@ -1311,6 +1327,38 @@ class Opensrs extends RegistrarModule
     public function tabSettings($package, $service, array $get = null, array $post = null, array $files = null)
     {
         return $this->manageSettings('tab_settings', $package, $service, $get, $post, $files);
+    }
+
+    /**
+     * Admin Restore tab
+     *
+     * @param stdClass $package A stdClass object representing the current package
+     * @param stdClass $service A stdClass object representing the current service
+     * @param array $get Any GET parameters
+     * @param array $post Any POST parameters
+     * @param array $files Any FILES parameters
+     * @return string The string representing the contents of this tab
+     */
+    public function tabRestore($package, $service, array $get = null, array $post = null, array $files = null)
+    {
+        $this->view = new View('tab_restore', 'default');
+
+        // Load the helpers required for this view
+        Loader::loadHelpers($this, ['Form', 'Html']);
+
+        $fields = $this->serviceFieldsToObject($service->fields);
+
+        // Only canceled domains can be restored, OpenSRS validates the domain is eligible for redemption
+        if (!empty($post) && $service->status == 'canceled') {
+            if ($this->restoreDomain($fields->domain, $package->module_row)) {
+                $this->setMessage('success', Language::_('Opensrs.tab_restore.success', true));
+            }
+        }
+
+        $this->view->set('domain', $fields->domain ?? '');
+        $this->view->setDefaultView('components' . DS . 'modules' . DS . 'opensrs' . DS);
+
+        return $this->view->fetch();
     }
 
     /**
