@@ -1,0 +1,108 @@
+    <div class="row panel-fix">
+        <div class="col-md-12">
+            <h4><?php $this->_('Opensrs.tab_url_forwarding.title'); ?></h4>
+
+            <?php if (!empty($forwarding_records)) { ?>
+            <div class="table-responsive">
+                <table class="table table-curved table-striped">
+                    <thead>
+                        <tr>
+                            <th><?php $this->_('Opensrs.tab_url_forwarding.field_subdomain'); ?></th>
+                            <th><?php $this->_('Opensrs.tab_url_forwarding.field_destination_url'); ?></th>
+                            <th><?php $this->_('Opensrs.tab_url_forwarding.field_enabled'); ?></th>
+                            <th><?php $this->_('Opensrs.tab_url_forwarding.field_masked'); ?></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($forwarding_records as $record) { ?>
+                        <tr>
+                            <td><?php echo $this->Html->safe($record['subdomain'] ?? '@'); ?></td>
+                            <td><?php echo $this->Html->safe($record['destination_url'] ?? ''); ?></td>
+                            <td><?php echo !empty($record['enabled']) ? $this->_('Opensrs.tab_url_forwarding.value_yes', true) : $this->_('Opensrs.tab_url_forwarding.value_no', true); ?></td>
+                            <td><?php echo !empty($record['masked']) ? $this->_('Opensrs.tab_url_forwarding.value_yes', true) : $this->_('Opensrs.tab_url_forwarding.value_no', true); ?></td>
+                            <td>
+                                <?php
+                                $this->Form->create();
+                                $this->Form->fieldHidden('action', 'delete_forwarding');
+                                $this->Form->fieldHidden('record_index', $record['record_index'] ?? '');
+                                ?>
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                    <?php $this->_('Opensrs.tab_url_forwarding.field_delete'); ?>
+                                </button>
+                                <?php $this->Form->end(); ?>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php } else { ?>
+            <div class="alert alert-info"><?php $this->_('Opensrs.tab_url_forwarding.no_records'); ?></div>
+            <?php } ?>
+
+            <h4 class="mt-4"><?php $this->_('Opensrs.tab_url_forwarding.add_record'); ?></h4>
+            <?php
+            $this->Form->create();
+            $this->Form->fieldHidden('action', 'set_forwarding');
+            ?>
+            <div class="form-group">
+                <?php
+                $this->Form->label($this->_('Opensrs.tab_url_forwarding.field_subdomain', true), 'subdomain');
+                $this->Form->fieldText(
+                    'subdomain',
+                    ($vars->subdomain ?? '@'),
+                    ['id' => 'subdomain', 'class' => 'form-control'],
+                );
+                ?>
+            </div>
+            <div class="form-group">
+                <?php
+                $this->Form->label(
+                    $this->_('Opensrs.tab_url_forwarding.field_destination_url', true),
+                    'destination_url',
+                );
+                $this->Form->fieldText(
+                    'destination_url',
+                    ($vars->destination_url ?? null),
+                    ['id' => 'destination_url', 'class' => 'form-control'],
+                );
+                ?>
+            </div>
+            <div class="form-group form-check">
+                <?php
+                $this->Form->fieldCheckbox(
+                    'enabled',
+                    '1',
+                    ($vars->enabled ?? true),
+                    ['id' => 'enabled', 'class' => 'form-check-input'],
+                );
+                $this->Form->label(
+                    $this->_('Opensrs.tab_url_forwarding.field_enabled', true),
+                    'enabled',
+                    ['class' => 'form-check-label'],
+                );
+                ?>
+            </div>
+            <div class="form-group form-check">
+                <?php
+                $this->Form->fieldCheckbox(
+                    'masked',
+                    '1',
+                    ($vars->masked ?? false),
+                    ['id' => 'masked', 'class' => 'form-check-input'],
+                );
+                $this->Form->label(
+                    $this->_('Opensrs.tab_url_forwarding.field_masked', true),
+                    'masked',
+                    ['class' => 'form-check-label'],
+                );
+                ?>
+            </div>
+            <button class="btn btn-light float-right" type="submit">
+                <i class="fas fa-plus"></i> <?php $this->_('Opensrs.tab_url_forwarding.field_add'); ?>
+            </button>
+            <?php $this->Form->end(); ?>
+        </div>
+    </div>

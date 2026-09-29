@@ -10,6 +10,10 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_provisioning.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
     . DIRECTORY_SEPARATOR . 'opensrs_domains_transfer.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_forwarding.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands'
+    . DIRECTORY_SEPARATOR . 'opensrs_domains_dnssec.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_ssl.php';
 require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'commands' . DIRECTORY_SEPARATOR . 'opensrs_users.php';
 
@@ -29,6 +33,16 @@ class OpensrsApi
 
     const SANDBOX_URL = 'https://horizon.opensrs.net:55443';
     const LIVE_URL = 'https://rr-n1-tor.opensrs.net:55443';
+
+    /**
+     * @var array The attributes the API represents as a list (dt_array) rather than a map
+     *  (dt_assoc). PHP cannot distinguish an empty list from an empty map, so the type of
+     *  an empty value is resolved from its key instead.
+     */
+    const LIST_ATTRIBUTES = [
+        'dnssec', 'forwarding', 'assign_ns', 'nameserver_list',
+        'A', 'AAAA', 'CNAME', 'MX', 'SRV', 'TXT'
+    ];
 
     /**
      * @var string The user to connect as
@@ -193,7 +207,10 @@ class OpensrsApi
             if (is_array($value)) {
                 $assoc = $dt_assoc->addChild('item');
                 $assoc->addAttribute('key', $key);
-                $assoc = $assoc->addChild(isset($value[0]) ? 'dt_array' : 'dt_assoc');
+                $is_list = empty($value)
+                    ? in_array($key, self::LIST_ATTRIBUTES, true)
+                    : isset($value[0]);
+                $assoc = $assoc->addChild($is_list ? 'dt_array' : 'dt_assoc');
 
                 $this->buildRecursiveAttributes($assoc, $value);
             } else {
