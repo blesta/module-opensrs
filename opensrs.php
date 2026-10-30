@@ -2804,7 +2804,11 @@ class Opensrs extends RegistrarModule
      */
     private function getTld($domain)
     {
-        $tlds = $this->getTlds();
+        $tlds = (array) $this->getTlds();
+        // Check the longest TLDs first so the most specific one matches, e.g. .org.uk before .uk
+        usort($tlds, function ($a, $b) {
+            return strlen($b) - strlen($a);
+        });
 
         $domain = strtolower($domain);
         foreach ($tlds as $tld) {
