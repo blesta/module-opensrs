@@ -104,6 +104,11 @@ $lang['Opensrs.tab_settings.field_epp_code'] = 'EPP Code';
 $lang['Opensrs.tab_settings.field_request_epp'] = 'Request EPP Code/Transfer Key';
 $lang['Opensrs.tab_settings.field_submit'] = 'Update Settings';
 
+$lang['Opensrs.tab_restore.title'] = 'Restore';
+$lang['Opensrs.tab_restore.text_restore'] = 'Restore %1$s from the redemption grace period. OpenSRS will charge a redemption fee, and the request will be rejected if the domain is not eligible for restoration.'; // %1$s is the domain name
+$lang['Opensrs.tab_restore.field_submit'] = 'Restore Domain';
+$lang['Opensrs.tab_restore.success'] = 'The domain has been restored successfully.';
+
 $lang['Opensrs.tab_dnssec.title'] = 'DNSSEC';
 $lang['Opensrs.tab_dnssec.field_key_tag'] = 'Key Tag';
 $lang['Opensrs.tab_dnssec.field_algorithm'] = 'Algorithm';

@@ -1,0 +1,13 @@
+<?php /** @var View $this **/ ?>
+
+<?php $this->Form->create(); ?>
+<div class="mb-3">
+    <p><?php $this->_('Opensrs.tab_restore.text_restore', false, $this->Html->safe($domain ?? ''));?></p>
+</div>
+<div class="d-flex justify-content-end">
+    <?php $this->Form->fieldSubmit('restore', $this->_('Opensrs.tab_restore.field_submit', true), [
+        'class' => 'btn btn-primary',
+    ]); ?>
+</div>
+<?php $this->Form->end();
+?>
